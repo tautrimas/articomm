@@ -1,0 +1,21 @@
+Single agent 1.2
+
+Major:
+
+  + Complete code redesign. Everything now goes object-oriented
+  + Modular ANN's involved.
+  + Evolution is restarted if results are not satisfying
+
+Minor:
+
+  * Now "evaluations done" is represented corectly
+  + Up to 50000 evaluations - no double evaluating
+  * Second column shows fitness change over last generation
+  + A star* is added to forced output line every certain amount of generations
+  * Population size is now 300
+
+Single agent 1.1
+
+  + Evolves sensor positions
+  + New coloring
+  * Improved performance
