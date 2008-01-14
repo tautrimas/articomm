@@ -105,9 +105,9 @@ void CEvolution::step()
     generation++;
   double senas=pool->getbest();
   pool->mutatepool(((generation*pool->getpoolsize())%10800 > 5400) ? 0.01 : 2.0);
-  pool->scoreall();
+  pool->scorepool();
   if (generation*pool->getpoolsize() > 25000)
-    pool->scoreall();
+    pool->scorepool();
   pool->sort();
   // output evolution progress if leader changed
   if ((senas < pool->getbest()) && (((generation*pool->getpoolsize()) % GEN)!=0))

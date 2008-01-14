@@ -31,7 +31,7 @@ class CPool {
     void outputgenes();
     void sort();
     void score(int, bool);
-    void scoreall();
+    void scorepool();
     double getbest() {return popul[0].fitness;}
     int getpoolsize() {return poolsize;}
     TPopul getmember(int num) {return popul[num];}
@@ -161,7 +161,7 @@ void CPool::score(int i, bool print)
   popul[i].fitness = simulation.getscore();
 }
 
-void CPool::scoreall()
+void CPool::scorepool()
 {
   for (int i=0;i<poolsize;i++) score(i, false);
 }
