@@ -156,12 +156,17 @@ void CPool::sort()
 
 void CPool::score(int i, bool print)
 {
-  CSimulation simulation(popul[i],environment);
+  /*CSimulation simulation(popul[i],environment);
   simulation.runsim(print);
+  popul[i].fitness = simulation.getscore();*/
+
+  CSimulation simulation(popul[i],environment);
+  simulation.runsim2();
   popul[i].fitness = simulation.getscore();
 }
 
 void CPool::scorepool()
 {
+
   for (int i=0;i<poolsize;i++) score(i, false);
 }

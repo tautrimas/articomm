@@ -48,8 +48,8 @@ CEvolution::CEvolution(int poolsize)
     pool->randomizegenes();
   }
 
-  pool->scoreall();
-  pool->scoreall();
+  pool->scorepool();
+  pool->scorepool();
   pool->sort();
 
   printf("%12.2f %12.2f      1\n",pool->getbest(), pool->getbest() - pool->getmember(pool->getpoolsize()-1).fitness);
@@ -75,8 +75,8 @@ void CEvolution::restart(int poolsize)
     pool->randomizegenes();
   }
 
-  pool->scoreall();
-  pool->scoreall();
+  pool->scorepool();
+  pool->scorepool();
   pool->sort();
 
   printf("%12.2f %12.2f      1*\n",pool->getbest(), pool->getbest() - pool->getmember(pool->getpoolsize()-1).fitness);
