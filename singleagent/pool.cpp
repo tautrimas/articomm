@@ -25,6 +25,7 @@ class CPool {
     ~CPool();
     TPopul crossover(TPopul);
     TPopul mutate(TPopul, double);
+    TPopul mutate2(TPopul, double);
     void mutatepool(double);
     void randomizegenes();
     void readgenes(double);
@@ -83,15 +84,34 @@ TPopul CPool::mutate(TPopul member, double delta)
   return member;
 }
 
+TPopul CPool::mutate2(TPopul member, double delta)
+{
+  double ratio = 0.6; //R.randdouble(0.15,1.0);
+  ratio *= ratio;
+  /*for (int i=0;i<wkiekis;i++)
+    //simple mutation
+  if (R.randdouble() < ratio)
+  member.gene[i] = R.randdouble(-amplitude,amplitude)+R.randdouble()/1000000;*/
+  for (int i=0;i<wcount1;i++)
+    //simple mutation
+    if (R.randdouble() < ratio)
+      member.gene[i] += R.randdouble(-member.gene[i]*delta,member.gene[i]*delta);
+
+  /*for (int i=wcount1+wcount2;i<genecount;i++)
+  member.gene[i] += R.randdouble(-1.0,1.0);*/
+  member.fitness=0;
+  return member;
+}
+
 void CPool::mutatepool(double delta)
 {
   for (int i=(poolsize / 3);i<poolsize/3*2;i++) {
     popul[i] = crossover(popul[i-(poolsize/3)]);
-    popul[i] = mutate(popul[i-(poolsize/3)],delta);
+    popul[i] = mutate2(popul[i-(poolsize/3)],delta);
   }
   for (int i=((poolsize / 3) * 2);i<poolsize;i++) {
     popul[i] = crossover(popul[i-(poolsize/3)]);
-    popul[i] = mutate(popul[i-((poolsize/3)*2)],delta);
+    popul[i] = mutate2(popul[i-((poolsize/3)*2)],delta);
   }
 }
 
@@ -156,13 +176,18 @@ void CPool::sort()
 
 void CPool::score(int i, bool print)
 {
-  /*CSimulation simulation(popul[i],environment);
-  simulation.runsim(print);
-  popul[i].fitness = simulation.getscore();*/
-
-  CSimulation simulation(popul[i],environment);
-  simulation.runsim2();
-  popul[i].fitness = simulation.getscore();
+  /*if (true)
+  {
+    CSimulation simulation(popul[i],environment);
+    simulation.runsim2();
+    popul[i].fitness = simulation.getscore();
+  }
+  else*/
+  {
+    CSimulation simulation(popul[i],environment);
+    simulation.runsim(print);
+    popul[i].fitness = simulation.getscore();
+  }
 }
 
 void CPool::scorepool()

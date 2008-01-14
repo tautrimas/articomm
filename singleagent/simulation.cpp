@@ -182,28 +182,27 @@ void CSimulation::runsim2()
   CANN ann2(weights2, IN2, HID2, OUT2);
   //fittnes is starting from zero
   float fit = 0.0;
-  float angle1=30.0;
-  float angle2=-150.0;
-  for (int sleeping=0;sleeping<2;sleeping++)
-    for (int eating=0;eating<2;eating++)
-      for (float sleep=0;sleep<1;sleep += 0.1)
-        for (float eat=0;eat<1;eat += 0.1)
-        {
-          mas2[1] = angle1;
-          mas2[2] = angle2;
-          mas2[3] = sleeping;
-          mas2[4] = eating;
-          mas2[5] = sleep;
-          mas2[6] = eat;
-          ann2.process(mas2);
-          if (sleep > eat && angle1 > 0 && mas2[IN2+HID2+OUT2-2] > 0.5) fit += 2.0;
-          if (sleep > eat && angle1 < 0 && mas2[IN2+HID2+OUT2-2] < 0.5) fit += 2.0;
-          if (sleep < eat && angle2 < 0 && mas2[IN2+HID2+OUT2-2] < 0.5) fit += 2.0;
-          if (sleep < eat && angle2 > 0 && mas2[IN2+HID2+OUT2-2] > 0.5) fit += 2.0;
+  for (float angle=-180.0;angle<180.0;angle += 30.0)
+    for (int sleeping=0;sleeping<2;sleeping++)
+      for (int eating=0;eating<2;eating++)
+        for (float sleep=0.0;sleep<1.0;sleep += 0.1)
+          for (float eat=0.0;eat<1.0;eat += 0.1)
+          {
+            mas2[1] = angle;
+            mas2[2] = angle-180.0;
+            mas2[3] = sleeping;
+            mas2[4] = eating;
+            mas2[5] = sleep;
+            mas2[6] = eat;
+            ann2.process(mas2);
+            if (sleep > eat && mas2[1] > 0 && mas2[IN2+HID2+OUT2-2] > 0.5) fit += 0.2;
+            if (sleep > eat && mas2[1] < 0 && mas2[IN2+HID2+OUT2-2] < 0.5) fit += 0.2;
+            if (sleep < eat && mas2[2] < 0 && mas2[IN2+HID2+OUT2-2] < 0.5) fit += 0.2;
+            if (sleep < eat && mas2[2] > 0 && mas2[IN2+HID2+OUT2-2] > 0.5) fit += 0.2;
 
-          if (sleep > eat && sleeping > 0 && mas2[IN2+HID2+OUT2-1] > 0.5) fit += 2.0;
-          if (sleep < eat && eating > 0 && mas2[IN2+HID2+OUT2-1] > 0.5) fit += 2.0;
-        }
+            if (sleep > eat && sleeping > 0 && mas2[IN2+HID2+OUT2-1] > 0.5) fit += 2.0;
+            if (sleep < eat && eating > 0 && mas2[IN2+HID2+OUT2-1] > 0.5) fit += 2.0;
+          }
   member.fitness = fit;
 }
 
