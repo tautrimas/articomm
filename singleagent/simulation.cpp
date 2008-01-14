@@ -24,6 +24,7 @@ class CSimulation {
     CSimulation(TPopul &member2, CEnvironment &environment2) {member = member2; environment = environment2;}
     ~CSimulation() {}
     void runsim(bool);
+    void runsim2();
     double getscore() {return member.fitness;}
     void preparesimulationfile();
     void outputsimulationstep(double, double, double, double, double, double, double, double, double);
@@ -167,3 +168,42 @@ void CSimulation::runsim(bool printprogress)
   fit += (voyages+1-tvoyages)*8000;
   member.fitness = fit;
 }
+
+void CSimulation::runsim2()
+{
+  double mas2[IN2+HID2+OUT2];
+  mas2[0]=1;
+  mas2[IN2]=1;
+  //read weights from genotype
+  double weights2[wcount2];
+  for (int i=wcount1;i<wcount1+wcount2;i++)
+    weights2[i-wcount1] = member.gene[i];
+
+  CANN ann2(weights2, IN2, HID2, OUT2);
+  //fittnes is starting from zero
+  float fit = 0.0;
+  float angle1=30.0;
+  float angle2=-150.0;
+  for (int sleeping=0;sleeping<2;sleeping++)
+    for (int eating=0;eating<2;eating++)
+      for (float sleep=0;sleep<1;sleep += 0.1)
+        for (float eat=0;eat<1;eat += 0.1)
+        {
+          mas2[1] = angle1;
+          mas2[2] = angle2;
+          mas2[3] = sleeping;
+          mas2[4] = eating;
+          mas2[5] = sleep;
+          mas2[6] = eat;
+          ann2.process(mas2);
+          if (sleep > eat && angle1 > 0 && mas2[IN2+HID2+OUT2-2] > 0.5) fit += 2.0;
+          if (sleep > eat && angle1 < 0 && mas2[IN2+HID2+OUT2-2] < 0.5) fit += 2.0;
+          if (sleep < eat && angle2 < 0 && mas2[IN2+HID2+OUT2-2] < 0.5) fit += 2.0;
+          if (sleep < eat && angle2 > 0 && mas2[IN2+HID2+OUT2-2] > 0.5) fit += 2.0;
+
+          if (sleep > eat && sleeping > 0 && mas2[IN2+HID2+OUT2-1] > 0.5) fit += 2.0;
+          if (sleep < eat && eating > 0 && mas2[IN2+HID2+OUT2-1] > 0.5) fit += 2.0;
+        }
+  member.fitness = fit;
+}
+

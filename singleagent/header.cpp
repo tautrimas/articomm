@@ -27,9 +27,9 @@ using namespace std;
 #define OUT2 2  //output nodes
 #define wcount2 (IN2*(HID2-1)+HID2*OUT2) //number of weights
 
-#define dydis 3000  // size of the population
+#define dydis 120  // size of the population
 #define amplitude 1500  //how many times variable can be increased/decreased in mutation
-#define GEN (dydis)  //how many evaluations must pass for status to be outputed
+#define GEN (dydis*30)  //how many evaluations must pass for status to be outputed
 
 #define maxs 0.15 //max speed/s
 #define maxrot 120 //max rotation degrees/s
