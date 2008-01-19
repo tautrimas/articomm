@@ -3,17 +3,21 @@
 * This is alpha release. Known bugs:
 *
 * Continue functionality won't work correctly.
-* Due to ANN modularization pool won't converge to a satisfiable solution.
+* Due to genome complexity and poor GA mechanism pool won't converge to a satisfiable solution.
 *
 *******************
 
-Just to view DEMO:
+>>Just to view DEMO:
 1. Run ./animateagent
 
-To start demo evolution:
+>>To start demo evolution:
 1. Run ./main
 2. Stop execution with 01 in stop file (program checks it once in a several seconds)
 3. Run ./animateagent
 NOTE: for agent to complete the task completely, it must reach at least 44000 points. Try running articomm several times. "continue" file has 1 if you want to continue evolution from previous state after stop or ctrl-c.
 
-To compile main.cpp and animateagent.cpp use g++ compiling strings present in those files' comments.
+>>Compilation
+1. Run "make"
+2. To start program type: "./main" or "make run".
+3. To compile animation run: "make animate".
+4. To run animation type: "./animateagent" or "make run2"
