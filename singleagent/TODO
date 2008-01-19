@@ -4,3 +4,4 @@
 - Fix bug stop
 - Make a Makefile
 - Animateagent should use only chromosome
+- Prepare for multi GA's (rename CPool)
