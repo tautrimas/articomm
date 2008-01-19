@@ -11,8 +11,6 @@ main: main.o
 	$(CC) $(LDFLAGS) main.o -o main -O2
 main.o: main.cpp animateagent.cpp environment.cpp header.cpp pool.cpp robot.cpp ann.cpp evolution.cpp main.cpp random.cpp simulation.cpp
 	$(CC) $(CFLAGS) main.cpp
-clean:
-	rm main animateagent *.o
 run:
 	./main
 animate: animateagent
@@ -23,3 +21,7 @@ animateagent.o: animateagent.cpp
 	$(CC) $(CFLAGS) animateagent.cpp
 run2:
 	./animateagent
+clean:
+	rm -f main animateagent *.o
+clean2:
+	rm -f *.o
