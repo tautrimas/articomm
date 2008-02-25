@@ -1,0 +1,11 @@
+>>Just to view DEMO:
+1. Run ./animateagent
+
+>>To start demo evolution:
+1. Run ./main
+2. Stop execution with ENTER
+3. Run ./animateagent
+
+>>Compilation
+1. To compile evolution part run "make evolution".
+2. To compile animation run: "make animation".
