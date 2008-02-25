@@ -1,0 +1,7 @@
+Multi-Agent 1.0.0
+  Changes from Single Agent 1.2-alpha
+  * Many robots!!!
+  * Now evolution is terminated with a keypress of ENTER
+  * New evolution algorithm has been implemented (Parameter-less Genetic Algorithm)
+  + Physics engine now supports collision detection (although with infinite friction)
+  - Animateagent degraded due to new program structure, but will be fixed in the future
