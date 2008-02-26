@@ -37,7 +37,7 @@ class Simulation
     }
     void prepareSimulationFile();
     void outputSimulationStep(double*, int);
-};
+  };
 
 void Simulation::prepareSimulationFile()
 {
@@ -66,17 +66,27 @@ void Simulation::runSim(bool printprogress)
     prepareSimulationFile();
   //robot initialization
 
-#define ROBOT_COUNT 3
+#define ROBOT_COUNT 5
 
   Robot robots[ROBOT_COUNT];
   for (int i = 0; i < ROBOT_COUNT; ++i)
   {
     robots[i].initialize(environment_);
   }
+  double robotStartPositions[ROBOT_COUNT][2] = { { 0.15, -0.1 },
+      { 0.15, -0.25 },
+      { 0.15, -0.40 },
+      { 0.30, -0.15 },
+      { 0.30, -0.30 } };
+  double robotEndPositions[ROBOT_COUNT][2] = { { 0.60, -0.30 },
+      { 0.60, -0.15 },
+      { 0.75, -0.40 },
+      { 0.75, -0.25 },
+      { 0.75, -0.10 } };
   for (int i = 0; i < ROBOT_COUNT; ++i)
   {
-    robots[i].position_[0] = 0.15;
-    robots[i].position_[1] = i * (-0.2) - 0.1;
+    robots[i].position_[0] = robotStartPositions[i][0];
+    robots[i].position_[1] = robotStartPositions[i][1];
   }
   Ann ann(member_.gene, member_.gene + WEIGHT_COUNT, IN, HID, OUT);
 
@@ -86,11 +96,11 @@ void Simulation::runSim(bool printprogress)
   int step = 0;
   bool stop = false;
   double oldPosition[ROBOT_COUNT][2];
-/*  bool didReachDestination[ROBOT_COUNT];
-  for (int i = 0; i < ROBOT_COUNT; ++i)
-  {
-    didReachDestination[i] = false;
-  }*/
+  /*  bool didReachDestination[ROBOT_COUNT];
+   for (int i = 0; i < ROBOT_COUNT; ++i)
+   {
+   didReachDestination[i] = false;
+   }*/
   do
   {
     step++;
@@ -126,12 +136,12 @@ void Simulation::runSim(bool printprogress)
             shortestGlobalDistance = currentDistance;
         }
       }
-      if (shortestGlobalDistance < ROBOTS_RADIUS * 2)
+      if (shortestDistance < ROBOTS_RADIUS * 2)
       {
         robots[nr].position_[0] = oldPosition[nr][0];
         robots[nr].position_[1] = oldPosition[nr][1];
-        robots[nr].speedVector_[0] = 0.0;
-        robots[nr].speedVector_[1] = 0.0;
+        /*robots[nr].speedVector_[0] = 0.0;
+         robots[nr].speedVector_[1] = 0.0;*/
       }
 
       oldPosition[nr][0] = robots[nr].position_[0];
@@ -156,36 +166,37 @@ void Simulation::runSim(bool printprogress)
         ann.setNode(SENSOR_COUNT + 2, shortestDistance / ROBOTS_RADIUS - 1); // [0, 1]
       }
 
-      ann.setNode(SENSOR_COUNT + 3, robots[nr].angleToPoint(0.75, (2 - nr)
-          * (-0.2) - 0.1, 0.0));
-      double distanceToDestination = robots[nr].distToPoint(0.75, (2 - nr)
-          * (-0.2) - 0.1);
+      ann.setNode(SENSOR_COUNT + 3, robots[nr].angleToPoint(
+          robotEndPositions[nr][0], robotEndPositions[nr][1], 0));
+      double distanceToDestination = robots[nr].distToPoint(
+          robotEndPositions[nr][0], robotEndPositions[nr][1]);
       ann.setNode(SENSOR_COUNT + 4, distanceToDestination);
 
       ann.process();
-//      printf("%f %f\n", ann.getOutputNode(0), (ann.getOutputNode(1) - 0.5) * 2);
+      //      printf("%f %f\n", ann.getOutputNode(0), (ann.getOutputNode(1) - 0.5) * 2);
 
       // New position is counted. ANN's outputs are acceleration and rotation
       // speed. Values from ANN are from 0 to 1 so they must be converted to 
       // [-1;1] for normal operation.
-      robots[nr].newPosition(/*member_.gene[0],*/ann.getOutputNode(-1), (ann.getOutputNode(0) - 0.5) * 2);
+      robots[nr].newPosition(/*member_.gene[0],*/ann.getOutputNode(1),
+          (ann.getOutputNode(2) - 0.5) * 2);
       if (printprogress)
       {
         double data[] = { robots[nr].position_[0], robots[nr].position_[1],
-            robots[nr].head_};
+            robots[nr].head_ };
         outputSimulationStep(data, sizeof(data) / sizeof(double));
       }
       simulationFitness -= distanceToDestination;
       /*if (distanceToDestination < ROBOTS_RADIUS)
-        didReachDestination[nr] = true;
-      bool allReachedDestinations = true;
-      for (int i = 0; i < ROBOT_COUNT; ++i)
-      {
-        if (didReachDestination[i] == false)
-          allReachedDestinations = false;
-      }
-      if (allReachedDestinations == true)
-        stop = true;*/
+       didReachDestination[nr] = true;
+       bool allReachedDestinations = true;
+       for (int i = 0; i < ROBOT_COUNT; ++i)
+       {
+       if (didReachDestination[i] == false)
+       allReachedDestinations = false;
+       }
+       if (allReachedDestinations == true)
+       stop = true;*/
     }
   } while (step * UPDATE_INTERVAL < ROUND_LENGTH && !stop);
   member_.fitness = simulationFitness;
