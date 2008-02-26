@@ -407,7 +407,7 @@ void DrawGLScene()
    Robotuko piešimas
 
    **********************************/
-  for (int nr = 0; nr < 3; ++nr)
+  for (int nr = 0; nr < 5; ++nr)
   {
     glLoadIdentity();
     gin >> x >> y >> rot;

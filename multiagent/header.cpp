@@ -18,11 +18,11 @@
 using namespace std;
 
 #define IN 6   //number of input nodes
-#define HID 2  //number of hidden nodes
-#define OUT 0  //output nodes
+#define HID 4  //number of hidden nodes
+#define OUT 2  //output nodes
 #define WEIGHT_COUNT ((IN+1)*(HID)+(HID+1)*OUT) //number of weights
 
-#define POPULATION_SIZE 72  // size of the population
+#define POPULATION_SIZE 144  // size of the population
 #define EVALUATIONS_LIMIT (POPULATION_SIZE*15)  //how many evaluations must pass for status to be outputed
 
 #define MAX_SPEED 0.15 //max speed/s
@@ -30,7 +30,7 @@ using namespace std;
 #define MIN_ROTATION_SPEED 60.0  //min ratation degrees/s
 #define MAX_ACCELERATION 0.15  //max acceleration m/s/s
 #define UPDATE_INTERVAL 0.038 //every this amount of seconds, posion and speed vectors will be recalculated
-#define ROUND_LENGTH 8.0 //round length in seconds
+#define ROUND_LENGTH 12.0 //round length in seconds
 #define ROBOTS_RADIUS 0.05 //robots radius in metres
 #define MAX_DISTANCE_SEEN 2.0  //how many ship sized distance units can sensor see in front
 #define SENSOR_COUNT 2 //how many sensors

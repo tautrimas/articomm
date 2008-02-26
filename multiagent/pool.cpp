@@ -62,7 +62,7 @@ Pool::~Pool()
 
 PoolMember Pool::crossover(PoolMember member)
 {
-  if ((rand() % 5) < 4)
+  if ((rand() % 5) < 3)
   {
     int crosspoint1 = rand() % (GENE_COUNT);
     int crosspoint2 = crosspoint1+(rand() % (GENE_COUNT-crosspoint1));
@@ -75,7 +75,7 @@ PoolMember Pool::crossover(PoolMember member)
 
 PoolMember Pool::mutate(PoolMember member, double& delta)
 {
-  double ratio = 1.1; //R.randdouble(0.15,1.0);
+  double ratio = 0.1; //R.randdouble(0.15,1.0);
   for (int i = 0; i < GENE_COUNT - 2; i++)
   {
     //simple mutation
@@ -201,7 +201,7 @@ void Pool::step()
     pool->outputgenes();
   */
 
-  if (senas >= getBest() || (getBest() - senas < getBest() * 0.005))
+  if (senas >= getBest() /*|| (getBest() - senas < getBest() * 0.005)*/)
     ++stable_;
   if (stable_ * poolSize_ > 20000)
     isPaused_ = true;
