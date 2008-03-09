@@ -37,12 +37,12 @@ class Ann
     int in_, hid_, out_;
 };
 
-void Ann::setNode(int node, double value)
+INL void Ann::setNode(int node, double value)
 {
   nodes_[node] = value;
 }
 
-double Ann::getOutputNode(int node)
+INL double Ann::getOutputNode(int node)
 {
   return nodes_[getNodeCount() - out_ + node - 1];
 }
@@ -71,7 +71,7 @@ Ann::~Ann()
   delete [] nodes_;
 }
 
-void Ann::process()
+INL void Ann::process()
 {
   for (int i=0; i<in_; i++)
     for (int j=in_+1; j<in_+hid_; j++)
@@ -108,7 +108,7 @@ void Ann::process()
   }
 }
 
-void Ann::clearNodes()
+INL void Ann::clearNodes()
 {
   for (int i = 1; i < getNodeCount(); ++i) {
     nodes_[i] = 0;

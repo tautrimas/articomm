@@ -34,7 +34,7 @@ class Robot {
     Environment* environment_;
 };
 
-void Robot::initialize(Environment* environment)
+INL void Robot::initialize(Environment* environment)
 {
   speedVector_[0] = 0;
   speedVector_[1] = 0;
@@ -42,7 +42,7 @@ void Robot::initialize(Environment* environment)
   environment_ = environment;
 }
 
-double Robot::sensorDistToWall(double dhead) {
+INL double Robot::sensorDistToWall(double dhead) {
   double a1[2], b1[2], b2[2], B[2], v1[2], v2[2], det11, det12, det2, t1, t2;
   //absolute heading of a sensor
   double newhead = head_ + dhead;
@@ -102,7 +102,7 @@ double Robot::sensorDistToWall(double dhead) {
 }
 
 //algorithm is borrowed from some delphi site
-double Robot::distToWall() {
+INL double Robot::distToWall() {
   double p1,p2,x1,y1,x2,y2,dx,dy,Ratio,l1,l2;
   //simmilar to CRobot::sensordisttowall. gdistance is made to be as large as possible, so that first
   //  calculation would overwrite it
@@ -132,12 +132,12 @@ double Robot::distToWall() {
   return gdistance - ROBOTS_RADIUS;
 }
 
-double Robot::distToPoint(double x, double y) {
+INL double Robot::distToPoint(double x, double y) {
   double c = sqrt((position_[0]-x)*(position_[0]-x)+(position_[1]-y)*(position_[1]-y));
   return c;
 }
 
-double Robot::angleToPoint(double x, double y, double dhead) {
+INL double Robot::angleToPoint(double x, double y, double dhead) {
   double c = distToPoint(x,y);
   double angle;
   if (position_[1] < y) angle = acos((x-position_[0])/c)/RAD_IN_DEG;
@@ -147,7 +147,7 @@ double Robot::angleToPoint(double x, double y, double dhead) {
   return angle;
 }
 
-void Robot::rotate(double vect[],double rot,double s) {
+INL void Robot::rotate(double vect[],double rot,double s) {
   //maximum allowed turning rate at current speed
   double alfa=MAX_ROTATION_SPEEED-(MAX_ROTATION_SPEEED-MIN_ROTATION_SPEED)*s/MAX_SPEED;
   //current rotation speed in rads/s
@@ -166,7 +166,7 @@ void Robot::rotate(double vect[],double rot,double s) {
         if (head_ > 180.0) head_-=360;
 }
 
-void Robot::newPosition(double acc2, double rot) {
+INL void Robot::newPosition(double acc2, double rot) {
   //current speed in m/s
   double speed=sqrt(speedVector_[0]*speedVector_[0]+speedVector_[1]*speedVector_[1]);
   //lets rotate speed vector

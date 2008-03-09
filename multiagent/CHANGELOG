@@ -1,4 +1,8 @@
-Multi-Agent 1.0.0
+Multi-Agent 1.1.0
+  * Used profiler and optimized most used functions with "inline". Speed gain – over 20%.
+  * This version uses 5 robots instead of 3.
+
+Multi-Agent 1.0.1
   Changes from Single Agent 1.2-alpha
   * Many robots!!!
   * Now evolution is terminated with a keypress of ENTER
