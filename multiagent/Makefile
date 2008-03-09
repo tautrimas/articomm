@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -g -fmessage-length=0 -march=athlon-xp
+CXXFLAGS = -Wall -fmessage-length=0
 
 OBJS =		main.o
 
