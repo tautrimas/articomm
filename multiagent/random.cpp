@@ -31,13 +31,13 @@ Randomization::Randomization() {
   srand((unsigned int) seconds_);
 }
 
-double Randomization::randDouble()
+INL double Randomization::randDouble()
 {
   return rand()/(double(RAND_MAX)+1);
 }
 
 //returns random double from min to max. Borrowed source code.
-double Randomization::randDouble(double min, double max)
+INL double Randomization::randDouble(double min, double max)
 {
   if (min>max)
   {

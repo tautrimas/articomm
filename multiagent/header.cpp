@@ -40,6 +40,8 @@ using namespace std;
 
 #define START_ROTATION 180.0
 
+#define INL inline
+
 //structure for one member. gene is an array for weights and fittness is member's gene
 struct PoolMember {
   double gene[GENE_COUNT];
