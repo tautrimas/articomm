@@ -1,3 +1,5 @@
 - cpool public fix
 - optimize distance to other robot
 - evaluations = steps
+- column headings
+- create scene class for environment simulation

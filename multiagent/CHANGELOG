@@ -1,3 +1,8 @@
+Multi-Agent 1.1.5
+  * Multiple core support! Speed doubles or quadruples depending on a processor onboard.
+  + More other optimizations
+  + More info in README
+
 Multi-Agent 1.1.0
   * Used profiler and optimized most used functions with "inline". Speed gain – over 20%.
   * This version uses 5 robots instead of 3.

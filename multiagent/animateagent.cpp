@@ -36,7 +36,7 @@ using namespace std;
 #define transx -0.4
 #define transy 0.3
 #define transz -2.1
-#define t (0.038/1) // /x is for slowing and fastening things up
+#define t (0.028) // /x is for slowing and fastening things up
 /* The number of our GLUT window */
 int window;
 

@@ -9,3 +9,21 @@
 >>Compilation
 1. To compile evolution part run "make evolution".
 2. To compile animation run: "make animation".
+
+NOTE:
+When evolution takes place, columns are:
+1. Global evolution generation count.
+2. Simulations passed.
+
+--
+
+Then populations follow with 2 collumns each:
+1. Population size.
+2. Best member fitness.
+
+Last column shows when additional population will be added.
+
+
+Have fun!
+
+By Tautrimas Pajarskas
