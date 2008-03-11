@@ -24,8 +24,8 @@ Randomization R;
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "plga.cpp"
 #include "threads.cpp"
+#include "plga.cpp"
 
 struct ThreadArgument
 {
@@ -75,6 +75,9 @@ int main()
   thread.join();
   argument->plga->finish();
   
+  puts("");
+  puts("Evolution complete! Go ahead - run: make animation && ./animateagent");
+  puts("");
   delete argument->plga;
   delete argument;
 

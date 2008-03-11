@@ -36,6 +36,7 @@ class Pool {
     void outputgenes();*/
     void sort();
     void score(int, bool);
+    //void* scorePart(void*);
     void scoreAll();
     double getBest() {return popul_[0].fitness;}
     int getPoolSize() {return poolSize_;}
@@ -146,22 +147,6 @@ bool compareMembers(PoolMember a, PoolMember b)
 
 void Pool::sort()
 {
-  /*int n=poolSize_, j;
-  int h=1, nm=n / 24;
-  PoolMember a;
-  while  (h < nm) h = 2 * h + 1;
-  do {
-    for (int i=h+1; i<=n; i++) {
-      a = popul_[i-1];
-      j = i;
-      while ( (j>h) && (a.fitness>popul_[j-h-1].fitness) ) {
-        popul_[j-1] = popul_[j-h-1];
-        j -= h;
-      }
-      popul_[j-1] = a;
-    }
-    h = h / 2;
-  } while (!(h<1));*/
   std::sort(popul_, popul_ + poolSize_, compareMembers);
 }
 
@@ -172,23 +157,54 @@ void Pool::score(int i, bool shouldPrint)
   popul_[i].fitness = simulation.getScore();
 }
 
+struct Interval
+{
+  int a, b;
+  Pool* pool;
+};
+
+void* scorePart(void* arg)
+{
+  Interval* interval = (Interval*)arg;
+  for (int i = interval->a; i < interval->b; i++)
+  {
+    interval->pool->score(i, false);
+  }
+  pthread_exit(0);
+}
+
 void Pool::scoreAll()
 {
-  for (int i = 0; i < poolSize_; i++) score(i, false);
+  const int N = 6;
+  Interval* intervals = new Interval[N];
+  Thread* threads = new Thread[N];
+  for (int i = 0; i < N; ++i)
+  {
+    intervals[i].a = i * (poolSize_ / N);
+    intervals[i].b = intervals[i].a + poolSize_ / N;
+    intervals[i].pool = this;
+    threads[i].run(scorePart, &intervals[i]);
+  }
+  for (int i = 0; i < N; ++i)
+  {
+    threads[i].join();
+  }
+  delete [] intervals;
+  delete [] threads;
 }
 
 void Pool::step()
 {
   generation_++;
-  if (generation_ * getPoolSize() > 25000)
-    generation_++;
+  /*if (generation_ * getPoolSize() > 25000)
+    generation_++;*/
   //copy old best
   double senas = getBest();
   //replicate first half while mutating them and then evaluate
-  mutateAll(( (generation_ * getPoolSize()) % 4000 > 2000) ? 0.01 : 2.0);
+  mutateAll(( (generation_ % 4) > 0) ? 0.01 : 2.0);
   scoreAll();
-  if (generation_ * getPoolSize() > 25000)
-    scoreAll();
+  /*if (generation_ * getPoolSize() > 25000)
+    scoreAll();*/
   sort();
   /*
   // output evolution progress if leader changed

@@ -29,7 +29,7 @@ using namespace std;
 #define MAX_ROTATION_SPEEED 120.0 //max rotation degrees/s
 #define MIN_ROTATION_SPEED 60.0  //min ratation degrees/s
 #define MAX_ACCELERATION 0.15  //max acceleration m/s/s
-#define UPDATE_INTERVAL 0.038 //every this amount of seconds, posion and speed vectors will be recalculated
+#define UPDATE_INTERVAL 0.028 //every this amount of seconds, posion and speed vectors will be recalculated
 #define ROUND_LENGTH 12.0 //round length in seconds
 #define ROBOTS_RADIUS 0.05 //robots radius in metres
 #define MAX_DISTANCE_SEEN 2.0  //how many ship sized distance units can sensor see in front
