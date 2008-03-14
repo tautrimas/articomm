@@ -3,7 +3,7 @@
 
 struct Population
 {
-  Pool pool();
+    Pool pool();
 };
 
 class Plga
@@ -13,7 +13,7 @@ class Plga
     ~Plga();
     void step();
     void finish();
-    
+
   private:
     void createPopulation();
     int generation_;
@@ -64,7 +64,8 @@ void Plga::step()
   list<Pool>::iterator iterator = populations_.begin();
   for (int i = 1; iterator != populations_.end(); iterator++, i *= base_)
   {
-    if (((generation_ % i == 0) && !(iterator->getIsPaused())) || populations_.size() == 1)
+    if (((generation_ % i == 0) && !(iterator->getIsPaused()))
+        || populations_.size() == 1)
     {
       iterator->step();
       evaluations_ += iterator->getPoolSize();
@@ -73,10 +74,22 @@ void Plga::step()
   }
 
   bool isAnyoneActive = false;
-  for (iterator = populations_.begin(); iterator != populations_.end(); iterator++)
+  for (iterator = populations_.begin(); iterator != populations_.end(); )
   {
     if (!iterator->getIsPaused())
+    {
       isAnyoneActive = true;
+      ++iterator;
+    }
+    /*else
+    {
+      if (iterator != populations_.begin())
+      {
+        list<Pool>::iterator tempIterator = iterator;
+        ++iterator;
+        populations_.erase(tempIterator);
+      }
+    }*/
   }
   if (!isAnyoneActive)
     populations_.front().resetStability();
@@ -87,7 +100,8 @@ void Plga::step()
     list<Pool>::iterator iterator2 = populations_.begin();
     iterator2++;
     list<Pool>::iterator iterator1 = populations_.begin();
-    for (; iterator2 != populations_.end() && populations_.size() != 1; iterator1++, iterator2++)
+    for (; iterator2 != populations_.end() && populations_.size() != 1;
+        iterator1++, iterator2++)
     {
       if (populations_.size() > 2)
       {
@@ -108,19 +122,19 @@ void Plga::step()
           }
         }
       }
-      else
-        if (iterator1->getBest() <= iterator2->getBest())
-        {
-          populations_.erase(iterator1);
-          iterator2 = populations_.end();
-        }
+      else if (iterator1->getBest() <= iterator2->getBest())
+      {
+        populations_.erase(iterator1);
+        iterator2 = populations_.end();
+      }
     }
   }
   if (shouldPrint)
   {
     printf("%6i %10i   --", generation_, evaluations_);
     for (iterator = populations_.begin(); iterator != populations_.end(); iterator++)
-      printf(" %4i %10.2f%c", iterator->getPoolSize(), iterator->getBest(), (iterator->getIsPaused()) ? '-' : '+');
+      printf(" %4i %10.2f%c", iterator->getPoolSize(), iterator->getBest(),
+          (iterator->getIsPaused()) ? '-' : '+');
     printf(" %i\n", newBarrier_);
   }
 }

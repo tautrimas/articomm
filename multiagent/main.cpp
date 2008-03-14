@@ -63,7 +63,7 @@ int main()
   evolution.finish();
   */
   ThreadArgument* argument = new ThreadArgument;
-  argument->plga = new Plga(POPULATION_SIZE, 3, 2000);
+  argument->plga = new Plga(POPULATION_SIZE, 3, 500);
   argument->stop = false;
   Thread thread;
   thread.run(evolveRobots, argument);
