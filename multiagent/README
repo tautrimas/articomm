@@ -3,6 +3,8 @@
 
 >>To start demo evolution:
 1. Run ./main
+  NOTE: you can run ./main 8 and that will spawn 8 threads for
+  simulations. You may experiment on the number as much as you like. Default is 6.
 2. Stop execution with ENTER
 3. Run ./animateagent
 
@@ -12,18 +14,16 @@
 
 NOTE:
 When evolution takes place, columns are:
-1. Global evolution generation count.
-2. Simulations passed.
-
+1. Simulations passed.
+2. When new population will be spawned.
+3. Speed in ms per simulation.
 --
-
 Then populations follow with 2 collumns each:
 1. Population size.
 2. Best member fitness.
 
-Last column shows when additional population will be added.
-
-
 Have fun!
 
 By Tautrimas Pajarskas
+
+P.S. It runs faster on lightweight terminals (;
