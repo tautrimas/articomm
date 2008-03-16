@@ -25,7 +25,7 @@ class Environment
     ~Environment()
     {
     }
-    int wallcount()
+    int wallCount()
     {
       return walls_;
     }

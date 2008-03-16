@@ -9,7 +9,7 @@ struct Population
 class Plga
 {
   public:
-    Plga(int, int, int);
+    Plga(int, int, int, int);
     ~Plga();
     void step();
     void finish();
@@ -18,16 +18,21 @@ class Plga
     void createPopulation();
     int generation_;
     int evaluations_;
+    int evaluationsLastTime_;
     int base_;
     int newBarrier_;
     int newPopSize_;
+    int threadCount_;
     list<Pool> populations_;
     Environment environment_;
+    Benchmarker timer_, bigTimer_;
 };
 
-Plga::Plga(int popSize, int base, int barrier)
+Plga::Plga(int popSize, int base, int barrier, int threadCount)
 {
+  printf("\nSimulations                 Speed        Size   Fitness    Size   Fitness  ....\n\n");
   evaluations_ = 0;
+  evaluationsLastTime_ = 0;
   newPopSize_ = popSize;
   generation_ = 1;
   base_ = base;
@@ -35,6 +40,10 @@ Plga::Plga(int popSize, int base, int barrier)
 
   createPopulation();
   newBarrier_ = barrier;
+  timer_.start();
+  bigTimer_.start();
+
+  threadCount_ = threadCount;
 }
 
 Plga::~Plga()
@@ -47,9 +56,8 @@ void Plga::createPopulation()
   Pool* temp;
   temp = new Pool;
   populations_.push_back(*temp);
-  populations_.back().initialize(newPopSize_, &environment_);
+  populations_.back().initialize(newPopSize_, &environment_, threadCount_);
   populations_.back().randomizeAll();
-  evaluations_ += newPopSize_;
   newPopSize_ *= 2;
   newBarrier_ *= base_;
 }
@@ -74,14 +82,14 @@ void Plga::step()
   }
 
   bool isAnyoneActive = false;
-  for (iterator = populations_.begin(); iterator != populations_.end(); )
+  for (iterator = populations_.begin(); iterator != populations_.end();)
   {
     if (!iterator->getIsPaused())
     {
       isAnyoneActive = true;
       ++iterator;
     }
-    /*else
+    else
     {
       if (iterator != populations_.begin())
       {
@@ -89,7 +97,11 @@ void Plga::step()
         ++iterator;
         populations_.erase(tempIterator);
       }
-    }*/
+      else
+      {
+        ++iterator;
+      }
+    }
   }
   if (!isAnyoneActive)
     populations_.front().resetStability();
@@ -131,16 +143,48 @@ void Plga::step()
   }
   if (shouldPrint)
   {
-    printf("%6i %10i   --", generation_, evaluations_);
-    for (iterator = populations_.begin(); iterator != populations_.end(); iterator++)
-      printf(" %4i %10.2f%c", iterator->getPoolSize(), iterator->getBest(),
+    timer_.end();
+
+    printf("%6i << %6i || %6.3lf ms/sim ||--||", evaluations_, newBarrier_,
+        timer_.getTimeMS() / (evaluations_ - evaluationsLastTime_));
+    evaluationsLastTime_ = evaluations_;
+    
+    iterator = populations_.begin();
+    for (int i = 0; iterator != populations_.end() && i < 4; ++iterator, ++i)
+      printf(" %4i %8.2f%c ||", iterator->getPoolSize(), iterator->getBest(),
           (iterator->getIsPaused()) ? '-' : '+');
-    printf(" %i\n", newBarrier_);
+    printf("\n");
+
+    /*Robot robot;
+     robot.initialize(&environment_);
+     robot.position_[0] = 0.1;
+     robot.position_[1] = -0.1;
+     robot.speedVector_[0] = 0.0;
+     robot.speedVector_[1] = 0.1;
+     robot.head_ = 90.0;
+     //robot.rotate(1.0, MAX_SPEEDSQ);
+     for (int i = 0; i < 10000; ++i)
+     {
+     robot.accelerate(0.0, robot.speedVector_[0]*robot.speedVector_[0]
+     + robot.speedVector_[1]*robot.speedVector_[1]);
+     }
+     printf("%f %f %f\n", robot.speedVector_[0], robot.speedVector_[1],
+     robot.head_);*/
+
+    timer_.start();
   }
 }
 
 void Plga::finish()
 {
+  bigTimer_.end();
+  printf("\n==================================\nSummary:\n\n");
+  printf("Total simulations made: %i\n", evaluations_);
+  printf("Total time: %.1f s\n", bigTimer_.getTimeS());
+  printf("Average ms / simulation: %.4f ms\n", bigTimer_.getTimeMS()
+      / evaluations_);
+
+  puts("\nIntergrity:\nAll of these 4 should be equal:");
   printf("\n%f\n", populations_.front().getBest());
   populations_.front().score(0, false);
   printf("%f\n", populations_.front().getBest());

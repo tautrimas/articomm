@@ -1,5 +1,5 @@
 - cpool public fix
-- optimize distance to other robot
-- evaluations = steps
-- column headings
 - create scene class for environment simulation
+- update every second
+- colourful output
+- evolutionized mini settings

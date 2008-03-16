@@ -13,10 +13,27 @@
 //     You should have received a copy of the GNU General Public License
 //     along with ARTIcomm.  If not, see <http://www.gnu.org/licenses/>.
 
+//structure for one member. gene is an array for weights and fittness is member's gene
+
+#define IN 6   //number of input nodes
+#define HID 4  //number of hidden nodes
+#define OUT 2  //output nodes
+#define WEIGHT_COUNT ((IN+1)*(HID)+(HID+1)*OUT) //number of weights
+#define SENSOR_COUNT 2 //how many sensors
+#define GENE_COUNT (SENSOR_COUNT + WEIGHT_COUNT)
+
+struct PoolMember
+{
+    double gene[GENE_COUNT];
+    double fitness;
+};
+
 #include "simulation.cpp"
 #include <algorithm>
+#include "benchmarker.cpp"
 
-class Pool {
+class Pool
+{
   private:
     PoolMember * popul_;
     int poolSize_;
@@ -24,29 +41,48 @@ class Pool {
     bool isPaused_;
     int stable_;
     Environment* environment_;
+    int threadCount_;
   public:
-    Pool() {}
+    Pool()
+    {
+    }
     ~Pool();
-    void initialize(int, Environment*);
+    void initialize(int, Environment*, int);
     PoolMember crossover(PoolMember);
     PoolMember mutate(PoolMember, double&);
     void mutateAll(double);
     void randomizeAll();
     /*void readgenes(double);
-    void outputgenes();*/
+     void outputgenes();*/
     void sort();
     void score(int, bool);
     //void* scorePart(void*);
     void scoreAll();
-    double getBest() {return popul_[0].fitness;}
-    int getPoolSize() {return poolSize_;}
-    PoolMember getMember(int num) {return popul_[num];}
-    bool getIsPaused() { return isPaused_;}
+    double getBest()
+    {
+      return popul_[0].fitness;
+    }
+    int getPoolSize()
+    {
+      return poolSize_;
+    }
+    PoolMember getMember(int num)
+    {
+      return popul_[num];
+    }
+    bool getIsPaused()
+    {
+      return isPaused_;
+    }
     void step();
-    void resetStability() { stable_ = 0; isPaused_ = false; }
+    void resetStability()
+    {
+      stable_ = 0;
+      isPaused_ = false;
+    }
 };
 
-void Pool::initialize(int size, Environment* environment)
+void Pool::initialize(int size, Environment* environment, int threadCount)
 {
   popul_ = new PoolMember[size];
   poolSize_ = size;
@@ -54,6 +90,7 @@ void Pool::initialize(int size, Environment* environment)
   stable_ = 0;
   isPaused_ = false;
   generation_ = 0;
+  threadCount_ = threadCount;
 }
 
 Pool::~Pool()
@@ -81,21 +118,24 @@ PoolMember Pool::mutate(PoolMember member, double& delta)
   {
     //simple mutation
     if (R.randDouble() < ratio)
-      member.gene[i] += R.randDouble(-member.gene[i] * delta, member.gene[i] * delta);
+      member.gene[i] += R.randDouble(-member.gene[i] * delta, member.gene[i]
+          * delta);
   }
   /*for (int i=wcount;i<genecount;i++)
-    member.gene[i] += R.randdouble(-1.0,1.0);*/
-  member.fitness = -1000.0;
+   member.gene[i] += R.randdouble(-1.0,1.0);*/
+  member.fitness = -9999.0;
   return member;
 }
 
 void Pool::mutateAll(double delta)
 {
-  for (int i = (poolSize_ / 3); i < poolSize_ / 3 * 2; i++) {
+  for (int i = (poolSize_ / 3); i < poolSize_ / 3 * 2; i++)
+  {
     popul_[i] = crossover(popul_[i - (poolSize_ / 3)]);
     popul_[i] = mutate(popul_[i - (poolSize_ / 3)], delta);
   }
-  for (int i=((poolSize_ / 3) * 2);i<poolSize_;i++) {
+  for (int i = ((poolSize_ / 3) * 2); i < poolSize_; i++)
+  {
     popul_[i] = crossover(popul_[i - (poolSize_ / 3)]);
     popul_[i] = mutate(popul_[i - ((poolSize_ / 3) * 2)], delta);
   }
@@ -103,7 +143,8 @@ void Pool::mutateAll(double delta)
 
 void Pool::randomizeAll()
 {
-  for (int i = 0;i < poolSize_; i++) {
+  for (int i = 0; i < poolSize_; i++)
+  {
     for (int j = 0; j < WEIGHT_COUNT; j++)
     {
       //we use gaussian funcion to make more values closer to zero and some closer to 1.
@@ -111,34 +152,34 @@ void Pool::randomizeAll()
       popul_[i].gene[j] = 1000 * exp(-x * x);
     }
     /*for (int j=wkiekis;j<wkiekis+sensorcount;j++)
-    popul[i].gene[j]=(j-wkiekis)*110.0-55.0;//R.randdouble(-180,180);*/
+     popul[i].gene[j]=(j-wkiekis)*110.0-55.0;//R.randdouble(-180,180);*/
     popul_[i].gene[GENE_COUNT - 2] = -55.0;
     popul_[i].gene[GENE_COUNT - 1] = 55.0;
-    popul_[i].fitness = -1000.0;
+    popul_[i].fitness = -9999.0;
   }
 }
 
 /*void CPool::readgenes(double delta) {
-  ifstream fin("weights.txt", ifstream::in);
-  for (int i=0;i<poolsize/3;i++) {
-    for (int j=0;j<genecount;j++) {
-      fin >> popul[i].gene[j];
-    }
-  }
-  fin.close();
-  mutatepool(delta);
-}*/
+ ifstream fin("weights.txt", ifstream::in);
+ for (int i=0;i<poolsize/3;i++) {
+ for (int j=0;j<genecount;j++) {
+ fin >> popul[i].gene[j];
+ }
+ }
+ fin.close();
+ mutatepool(delta);
+ }*/
 
 /*void CPool::outputgenes()
-{
-  FILE *wout;
-  wout = fopen("weights.txt","w");
-  for (int i=0;i<poolsize/3;i++) {
-    for (int j=0;j<genecount;j++) fprintf (wout,"%0.15f\n",popul[i].gene[j]);
-    fprintf (wout,"\n");
-  }
-  fclose(wout);
-}*/
+ {
+ FILE *wout;
+ wout = fopen("weights.txt","w");
+ for (int i=0;i<poolsize/3;i++) {
+ for (int j=0;j<genecount;j++) fprintf (wout,"%0.15f\n",popul[i].gene[j]);
+ fprintf (wout,"\n");
+ }
+ fclose(wout);
+ }*/
 
 bool compareMembers(PoolMember a, PoolMember b)
 {
@@ -159,8 +200,8 @@ void Pool::score(int i, bool shouldPrint)
 
 struct Interval
 {
-  int a, b;
-  Pool* pool;
+    int a, b;
+    Pool* pool;
 };
 
 void* scorePart(void* arg)
@@ -175,17 +216,23 @@ void* scorePart(void* arg)
 
 void Pool::scoreAll()
 {
-  const int N = 6;
-  Interval* intervals = new Interval[N];
-  Thread* threads = new Thread[N];
-  for (int i = 0; i < N; ++i)
+  Interval* intervals = new Interval[threadCount_];
+  Thread* threads = new Thread[threadCount_];
+
+  int a = 0;
+  int b = poolSize_ / threadCount_;
+  for (int i = 0; i < threadCount_; ++i)
   {
-    intervals[i].a = i * (poolSize_ / N);
-    intervals[i].b = intervals[i].a + poolSize_ / N;
+    intervals[i].a = a;
+    if (i < poolSize_ % threadCount_)
+      ++b;
+    intervals[i].b = b;
     intervals[i].pool = this;
     threads[i].run(scorePart, &intervals[i]);
+    a = b;
+    b += poolSize_ / threadCount_;
   }
-  for (int i = 0; i < N; ++i)
+  for (int i = 0; i < threadCount_; ++i)
   {
     threads[i].join();
   }
@@ -195,27 +242,27 @@ void Pool::scoreAll()
 
 void Pool::step()
 {
-  generation_++;
+  ++generation_;
   /*if (generation_ * getPoolSize() > 25000)
-    generation_++;*/
+   generation_++;*/
   //copy old best
   double senas = getBest();
   //replicate first half while mutating them and then evaluate
   mutateAll(( (generation_ % 4) > 0) ? 0.01 : 2.0);
   scoreAll();
   /*if (generation_ * getPoolSize() > 25000)
-    scoreAll();*/
+   scoreAll();*/
   sort();
   /*
-  // output evolution progress if leader changed
-  if ((senas < pool->getbest()) && (((generation*pool->getpoolsize()) % GEN)!=0))
-    printf("%12.2f %12.2f %6d\n",pool->getbest(), pool->getbest()-senas, generation*pool->getpoolsize());
-  // output evolution progress after some time
-  if (((generation*pool->getpoolsize()) % GEN)==0) {
-    printf("%12.2f %12.2f %6d*\n",pool->getbest(), pool->getbest()-senas, generation*pool->getpoolsize());
-    stopit = Stop();
-    pool->outputgenes();
-  */
+   // output evolution progress if leader changed
+   if ((senas < pool->getbest()) && (((generation*pool->getpoolsize()) % GEN)!=0))
+   printf("%12.2f %12.2f %6d\n",pool->getbest(), pool->getbest()-senas, generation*pool->getpoolsize());
+   // output evolution progress after some time
+   if (((generation*pool->getpoolsize()) % GEN)==0) {
+   printf("%12.2f %12.2f %6d*\n",pool->getbest(), pool->getbest()-senas, generation*pool->getpoolsize());
+   stopit = Stop();
+   pool->outputgenes();
+   */
 
   if (senas >= getBest() /*|| (getBest() - senas < getBest() * 0.005)*/)
     ++stable_;

@@ -13,6 +13,11 @@
 //     You should have received a copy of the GNU General Public License
 //     along with ARTIcomm.  If not, see <http://www.gnu.org/licenses/>.
 
+#define UPDATE_INTERVAL 0.04 //every this amount of seconds, posion and speed vectors will be recalculated
+#define ROUND_LENGTH 12.0 //round length in seconds
+#define ROBOT_COUNT 5
+
+
 #include "robot.cpp"
 #include "ann.cpp"
 
@@ -37,7 +42,7 @@ class Simulation
     }
     void prepareSimulationFile();
     void outputSimulationStep(double*, int);
-  };
+};
 
 void Simulation::prepareSimulationFile()
 {
@@ -65,9 +70,6 @@ void Simulation::runSim(bool printprogress)
   if (printprogress)
     prepareSimulationFile();
   //robot initialization
-
-#define ROBOT_COUNT 5
-
   Robot robots[ROBOT_COUNT];
   for (int i = 0; i < ROBOT_COUNT; ++i)
   {
@@ -91,7 +93,7 @@ void Simulation::runSim(bool printprogress)
   Ann ann(member_.gene, member_.gene + WEIGHT_COUNT, IN, HID, OUT);
 
   //fittnes is starting from zero
-  float simulationFitness = 0;
+  double simulationFitness = 0;
   //step*t is the second being virtualized
   int step = 0;
   bool stop = false;
@@ -103,45 +105,88 @@ void Simulation::runSim(bool printprogress)
    }*/
   do
   {
-    step++;
+    ++step;
+
+    double distanceMatrix[ROBOT_COUNT][ROBOT_COUNT];
+    double angleMatrix[ROBOT_COUNT][ROBOT_COUNT];
+    bool didMove[ROBOT_COUNT];
+    for (int i = 0; i < ROBOT_COUNT; ++i)
+    {
+      for (int j = 0; j < ROBOT_COUNT; ++j)
+      {
+        distanceMatrix[i][j] = -1.0;
+      }
+      didMove[i] = false;
+    }
+
     for (int nr = 0; nr < ROBOT_COUNT; ++nr)
     {
       // checking for wall collision
-      if (robots[nr].distToWall() < 0)
+      if (robots[nr].distToWallSq() < 0)
       {
         robots[nr].position_[0] = oldPosition[nr][0];
         robots[nr].position_[1] = oldPosition[nr][1];
-        robots[nr].speedVector_[0] = 0.0;
-        robots[nr].speedVector_[1] = 0.0;
+        robots[nr].speed_ = 0.0;
+        didMove[nr] = true;
       }
 
       // checking for robot collision
-      double shortestDistance = 100000000.0;
+      double shortestDistanceSq = 100000000.0;
       double angleToRobot = 180.0;
-      double shortestGlobalDistance = 100000000.0;
+      double shortestGlobalDistanceSq = 100000000.0;
+
       for (int i = 0; i < ROBOT_COUNT; ++i)
       {
         if (i != nr)
         {
-          double currentDistance = robots[nr].distToPoint(
-              robots[i].position_[0], robots[i].position_[1]);
-          double currentAngle = robots[nr].angleToPoint(robots[i].position_[0],
-              robots[i].position_[1], 0.0);
-          if (fabs(currentAngle) < 90.0 && shortestDistance > currentDistance)
+          double currentDistanceSq;
+          double currentAngle;
+
+          if (!didMove[i] && distanceMatrix[nr][i] > -0.9)
           {
-            shortestDistance = currentDistance;
+            currentDistanceSq = distanceMatrix[nr][i];
+            currentAngle = angleMatrix[nr][i];
+          }
+          else
+          {
+            currentDistanceSq = robots[nr].distToPointSq(
+                robots[i].position_[0], robots[i].position_[1]);
+            currentAngle = robots[nr].angleToPoint(robots[i].position_[0],
+                robots[i].position_[1], 0.0);
+
+            angleMatrix[nr][i] = currentAngle;
+            angleMatrix[i][nr] = -robots[i].head_ - 180 + currentAngle
+                + robots[nr].head_;
+            if (angleMatrix[i][nr] < -180.0)
+              angleMatrix[i][nr] += 360;
+            else if (angleMatrix[i][nr] > 180.0)
+              angleMatrix[i][nr] -= 360;
+
+            if (angleMatrix[i][nr] < -180.0)
+              angleMatrix[i][nr] += 360;
+            else if (angleMatrix[i][nr] > 180.0)
+              angleMatrix[i][nr] -= 360;
+
+            distanceMatrix[nr][i] = currentDistanceSq;
+            distanceMatrix[i][nr] = currentDistanceSq;
+
+          }
+          if (fabs(currentAngle) < 90.0 && shortestDistanceSq
+              > currentDistanceSq)
+          {
+            shortestDistanceSq = currentDistanceSq;
             angleToRobot = currentAngle;
           }
-          if (shortestGlobalDistance > currentDistance)
-            shortestGlobalDistance = currentDistance;
+          if (shortestGlobalDistanceSq > currentDistanceSq)
+            shortestGlobalDistanceSq = currentDistanceSq;
         }
       }
-      if (shortestDistance < ROBOTS_RADIUS * 2)
+      if (shortestDistanceSq < ROBOTS_RADIUSSQ * 4)
       {
         robots[nr].position_[0] = oldPosition[nr][0];
         robots[nr].position_[1] = oldPosition[nr][1];
-        /*robots[nr].speedVector_[0] = 0.0;
-         robots[nr].speedVector_[1] = 0.0;*/
+        robots[nr].speed_ *= 0.8;
+        didMove[nr] = true;
       }
 
       oldPosition[nr][0] = robots[nr].position_[0];
@@ -154,8 +199,8 @@ void Simulation::runSim(bool printprogress)
         ann.setNode(i + 1,
             robots[nr].sensorDistToWall(member_.gene[WEIGHT_COUNT+i]));
 
-      if (fabs(angleToRobot) > 90.0 || shortestDistance > MAX_DISTANCE_SEEN
-          * ROBOTS_RADIUS)
+      if (fabs(angleToRobot) > 90.0 || shortestDistanceSq > MAX_DISTANCE_SEENSQ
+          * ROBOTS_RADIUSSQ)
       {
         ann.setNode(SENSOR_COUNT + 1, 0.0); // null angle
         ann.setNode(SENSOR_COUNT + 2, 1.0); // max distance 1.0
@@ -163,12 +208,12 @@ void Simulation::runSim(bool printprogress)
       else
       {
         ann.setNode(SENSOR_COUNT + 1, angleToRobot);
-        ann.setNode(SENSOR_COUNT + 2, shortestDistance / ROBOTS_RADIUS - 1); // [0, 1]
+        ann.setNode(SENSOR_COUNT + 2, shortestDistanceSq / ROBOTS_RADIUSSQ - 1); // incorrect!!
       }
 
       ann.setNode(SENSOR_COUNT + 3, robots[nr].angleToPoint(
           robotEndPositions[nr][0], robotEndPositions[nr][1], 0));
-      double distanceToDestination = robots[nr].distToPoint(
+      double distanceToDestination = robots[nr].distToPointSq(
           robotEndPositions[nr][0], robotEndPositions[nr][1]);
       ann.setNode(SENSOR_COUNT + 4, distanceToDestination);
 
@@ -178,8 +223,11 @@ void Simulation::runSim(bool printprogress)
       // New position is counted. ANN's outputs are acceleration and rotation
       // speed. Values from ANN are from 0 to 1 so they must be converted to 
       // [-1;1] for normal operation.
-      robots[nr].newPosition(/*member_.gene[0],*/ann.getOutputNode(1),
-          (ann.getOutputNode(2) - 0.5) * 2);
+      robots[nr].newPosition(ann.getOutputNode(1), (ann.getOutputNode(2) - 0.5)
+          * 2.0);
+      /*ann.getNode(ann.getNodeCount()-2),
+       (ann.getNode(ann.getNodeCount()-1)-0.5)*2.0);*/
+
       if (printprogress)
       {
         double data[] = { robots[nr].position_[0], robots[nr].position_[1],

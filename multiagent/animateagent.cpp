@@ -46,10 +46,10 @@ GLuint base; // base display list for the font set.
 int light;
 
 /* rotation angle for the triangle. */
-float rtri = 0;
+double rtri = 0;
 
 /* rotation angle for the quadrilateral. */
-float rquad = 90.62;
+double rquad = 90.62;
 
 /* white ambient light at half intensity (rgba) */
 GLfloat LightAmbient[] = { 0.1f, 0.1f, 0.1f, 1.0f };
@@ -61,14 +61,14 @@ GLfloat LightDiffuse[] = { 0.3, 0.3, 0.3, 1 };
 GLfloat LightPosition[] = { 0.0f, 0.0f, 2.0f, 1.0f };
 
 #define N 128
-float rob[N][3][3];
+double rob[N][3][3];
 #define S 4
-float sienos[S][4];
+double sienos[S][4];
 
 bool pirmaskartas = 1;
 
 ifstream gin("coords.txt");
-float x, y, rot;
+double x, y, rot;
 
 void pakraunam()
 {
@@ -176,7 +176,7 @@ void InitGL(int Width, int Height) // We call this right after our OpenGL window
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity(); // Reset The Projection Matrix
 
-  gluPerspective(45.0f, (GLfloat)Width/(GLfloat)Height, 0.1f, 100.0f); // Calculate The Aspect Ratio Of The Window
+  gluPerspective(45.0f, (GLdouble)Width/(GLdouble)Height, 0.1f, 100.0f); // Calculate The Aspect Ratio Of The Window
 
   glMatrixMode(GL_MODELVIEW);
 
@@ -198,15 +198,15 @@ void ReSizeGLScene(int Width, int Height)
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
-  gluPerspective(45.0f, (GLfloat)Width/(GLfloat)Height, 0.1f, 100.0f);
+  gluPerspective(45.0f, (GLdouble)Width/(GLdouble)Height, 0.1f, 100.0f);
   glMatrixMode(GL_MODELVIEW);
 }
 
 //http://www.cs.fiu.edu/~weiss/dsaa_c2e/fig10_38.c
-void msum(float A[][4], float B[][4])
+void msum(double A[][4], double B[][4])
 {
   int i, j, k;
-  float C[4][4];
+  double C[4][4];
   for (i = 0; i < 4; i++)
     /* Initialization */
     for (j = 0; j < 4; j++)
@@ -222,7 +222,7 @@ void msum(float A[][4], float B[][4])
       A[i][j]=C[i][j];
 }
 
-void mvien(float b[][4])
+void mvien(double b[][4])
 {
   for (int i=0; i<4; i++)
     for (int j=0; j<4; j++)
@@ -233,9 +233,9 @@ void mvien(float b[][4])
   b[3][3] = 1;
 }
 
-void mrotx(float a[][4], float r)
+void mrotx(double a[][4], double r)
 {
-  float b[4][4];
+  double b[4][4];
   for (int i=0; i<4; i++)
     for (int j=0; j<4; j++)
       b[i][j] = 0;
@@ -249,9 +249,9 @@ void mrotx(float a[][4], float r)
   msum(a, b);
 }
 
-void mroty(float a[][4], float r)
+void mroty(double a[][4], double r)
 {
-  float b[4][4];
+  double b[4][4];
   for (int i=0; i<4; i++)
     for (int j=0; j<4; j++)
       b[i][j] = 0;
@@ -265,9 +265,9 @@ void mroty(float a[][4], float r)
   msum(a, b);
 }
 
-void mrotz(float a[][4], float r)
+void mrotz(double a[][4], double r)
 {
-  float b[4][4];
+  double b[4][4];
   for (int i=0; i<4; i++)
     for (int j=0; j<4; j++)
       b[i][j] = 0;
@@ -281,9 +281,9 @@ void mrotz(float a[][4], float r)
   msum(a, b);
 }
 
-void mtrans(float a[][4], float x, float y, float z)
+void mtrans(double a[][4], double x, double y, double z)
 {
-  float b[4][4];
+  double b[4][4];
   mvien(b);
   b[3][0] = x;
   b[3][1] = y;
@@ -291,21 +291,23 @@ void mtrans(float a[][4], float x, float y, float z)
   msum(a, b);
 }
 
-void vsum(float a[][4], float &x, float &y, float &z)
+void vsum(double a[][4], double &x, double &y, double &z)
 {
-  float x1=x, y1=y, z1=z;
+  double x1=x, y1=y, z1=z;
   x = a[0][0] * x1 + a[1][0] * y1 + a[2][0] * z1 + a[3][0];
   y = a[0][1] * x1 + a[1][1] * y1 + a[2][1] * z1 + a[3][1];
   z = a[0][2] * x1 + a[1][2] * y1 + a[2][2] * z1 + a[3][2];
 }
 
-void siena(float x1, float y1, float x2, float y2, float spalva)
+void siena(double x1, double y1, double x2, double y2, double spalva)
 {
   glBegin(GL_POLYGON);
   glColor3f(spalva, 0, 0);
-  float z=(cos(rtri*5)+1)/200+0.03;
-  float mat[4][4];
-  float vert[4][3] = { x1, 0, -y1, x2, 0, -y2, x2, z, -y2, x1, z, -y1 };
+  double z=(cos(rtri*5)+1)/200+0.03;
+  double mat[4][4];
+  double vert[4][3] = { { x1, 0, -y1 }, { x2, 0, -y2 }, { x2, z, -y2 }, { x1,
+      z,
+      -y1 } };
   //printf("%0.1f %0.1f ",x1,y1);
   for (int i=0; i<4; i++)
   {
@@ -323,13 +325,13 @@ void siena(float x1, float y1, float x2, float y2, float spalva)
 
 void tekstas()
 {
-  float base1, base2, hung, tired, azimuth, elapsed;
+  double base1, base2, hung, tired, azimuth, elapsed;
   gin >> base1 >> base2;//>> tired >> azimuth >> elapsed;
   glLoadIdentity();
   glTranslatef(0.0f, 0.0f, -1.0f); // move 1 unit into the screen.
 
   glColor3f(1.0f, 1.0f, 0.0f);
-  float defx = -0.5000f, defy = 0.38000f, defstep = 0.018f;
+  double defx = -0.5000f, defy = 0.38000f, defstep = 0.018f;
   int i=0;
   char buffer [50];
   int n;
@@ -381,9 +383,9 @@ void DrawGLScene()
   glLoadIdentity();
   glBegin(GL_POLYGON);
   glColor3f(0.9, 0.9, 0.9);
-  float mat[4][4];
-  float vertex[3];
-  float floor[4*2]= { -0.2, 0.2, 1.1, 0.2, 1.1, -0.8, -0.2, -0.8 };
+  double mat[4][4];
+  double vertex[3];
+  double floor[4*2]= { -0.2, 0.2, 1.1, 0.2, 1.1, -0.8, -0.2, -0.8 };
   for (int i=0; i<4; i++)
   {
     if (i==2)
@@ -441,7 +443,6 @@ void DrawGLScene()
     // tekstas();
   }
 
-  
   // swap the buffers to display, since double buffering is used.
   glutSwapBuffers();
   if (pirmaskartas)
