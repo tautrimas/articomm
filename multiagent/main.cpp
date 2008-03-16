@@ -16,6 +16,8 @@
 // g++ main.cpp -o main -O2 && chmod u+x main && time ./main
 // g++ main.cpp -o main -g && chmod u+x main && ddd main
 
+#define INL
+
 #include "header.cpp"
 #include "random.cpp"
 
@@ -29,8 +31,8 @@ Randomization R;
 
 struct ThreadArgument
 {
-  Plga* plga;
-  bool stop;
+    Plga* plga;
+    bool stop;
 };
 
 void* evolveRobots(void* arg)
@@ -41,45 +43,35 @@ void* evolveRobots(void* arg)
   pthread_exit(0);
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-  /*
-  CEvolution evolution(dydis);
-  do
+  int threadsForPool = 6;
+  if (argc > 1)
   {
-    //begin evolution
-    do
-    {
-      evolution.step();
-    } while (!(evolution.enough() ||
-               //(evolution.getbest() < 9000.0 && evolution.getgeneration()*dydis > 10000) ||
-               (evolution.getbest() < 13000.0 && evolution.getgeneration()*dydis > 50000) ||
-                   (evolution.getbest() < 20000.0 && evolution.getgeneration()*dydis > 300000)));
-    if (!evolution.enough())
-    {
-      evolution.restart(dydis);
-    }
-  } while (!(evolution.enough()));
-  evolution.finish();
-  */
+    sscanf(argv[1], "%i", &threadsForPool);
+  }
   ThreadArgument* argument = new ThreadArgument;
-  argument->plga = new Plga(POPULATION_SIZE, 3, 500);
+  argument->plga = new Plga(6, 3, 6, threadsForPool);
   argument->stop = false;
   Thread thread;
   thread.run(evolveRobots, argument);
-  /*Plga plga(POPULATION_SIZE, 3, 20);
-  plga.step();
-  plga.finish();*/
+
+  /*Plga plga(600, 3, 20000000);
+   for (int i = 0; i < 1000; ++i)
+   {
+   plga.step();
+   }
+   plga.finish();*/
   getc(stdin);
   argument->stop = true;
   thread.join();
   argument->plga->finish();
+  delete argument->plga;
+  delete argument;
   
   puts("");
   puts("Evolution complete! Go ahead - run: make animation && ./animateagent");
   puts("");
-  delete argument->plga;
-  delete argument;
 
   return 0;
 }

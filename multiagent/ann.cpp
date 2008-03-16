@@ -45,7 +45,7 @@ INL void Ann::setNode(int node, double value)
 
 INL double Ann::getOutputNode(int node)
 {
-  return nodes_[getNodeCount() - out_ + node - 1];
+  return nodes_[nodeCount_ - out_ + node - 1];
 }
 
 double Ann::getNode(int node)
@@ -62,12 +62,11 @@ Ann::Ann(double* weightsStart, double* weightsEnd, int in, int hid, int out)
   nodeCount_ = in_ + hid_ + out_;
   weightCount_ = in_ * (hid_ - 1) + hid_ * out_;
 
-  weights_ = new double[getWeightCount()];
+  weights_ = new double[weightCount_];
   double* iterator = weightsStart;
   for (int i = 0; iterator != weightsEnd; ++iterator, ++i)
     weights_[i] = *iterator;
-  nodes_ = new double[getNodeCount()];
-  clearNodes();
+  nodes_ = new double[nodeCount_];
 }
 
 Ann::~Ann()
@@ -117,7 +116,7 @@ INL void Ann::process()
 
 INL void Ann::clearNodes()
 {
-  for (int i = 1; i < nodeCount_; ++i)
+  for (int i = 2 + in_; i < nodeCount_; ++i)
   {
     nodes_[i] = 0;
   }

@@ -13,6 +13,20 @@
 //     You should have received a copy of the GNU General Public License
 //     along with ARTIcomm.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <math.h>
+
+#define MAX_SPEED 0.15
+#define MAX_ROTATION_SPEED 120.0 //max rotation degrees/s
+#define MIN_ROTATION_SPEED 60.0  //min ratation degrees/s
+#define MAX_ACCELERATION 0.2  //max acceleration m/s/s
+#define ROBOTS_RADIUS 0.05
+#define ROBOTS_RADIUSSQ 0.0025 //robots radius in metres 0.05
+#define MAX_DISTANCE_SEEN 2.0
+#define MAX_DISTANCE_SEENSQ 4.0  //how many ship sized distance units can sensor see in front 2.0
+#define START_ROTATION 180.0
+
+#define RAD_IN_DEG (3.14159265/180.0)
+
 #include "environment.cpp"
 
 class Robot
@@ -26,14 +40,15 @@ class Robot
     {
     }
     void initialize(Environment*);
-    void rotate(double vect[], double rot, double s); //rotates speed vector. needs desired rotation speed and current speed
+    void rotate(double rot); //rotates speed vector. needs desired rotation speed and current speed
+    void accelerate(double acc); //accelerates speed vector
     void newPosition(double, double); //calculates new osition. needs acceleration (0 to 1) and rotaion speed (0 to 1)
     double sensorDistToWall(double); //returns sensor value (0 to 1). 1 is equals maxsensdist or more
-    double distToWall(); //returns distance in metres to nearest wall
-    double distToPoint(double &x, double &y);
+    double distToWallSq(); //returns distance in metres to nearest wall
+    double distToPointSq(double &x, double &y);
     double angleToPoint(double &x, double &y, double dhead); //returns angle to a point when dhead is angle from heading
 
-    double speedVector_[2]; //speedvector
+    double speed_;
     double head_; // heading starting from east and increasing counter-clockwise
     double position_[2]; //position
   private:
@@ -42,8 +57,7 @@ class Robot
 
 INL void Robot::initialize(Environment* environment)
 {
-  speedVector_[0] = 0;
-  speedVector_[1] = 0;
+  speed_ = 0.0;
   head_ = START_ROTATION;
   environment_ = environment;
 }
@@ -56,11 +70,11 @@ INL double Robot::sensorDistToWall(double dhead)
   //a2 and a1 is calculated. Then we have v1 which is vector of a sensor. Its length is spindulys.
   a1[0] = position_[0];
   a1[1] = position_[1];
-  v1[0] = cos(newhead*RAD_IN_DEG)*ROBOTS_RADIUS;
-  v1[1] = sin(newhead*RAD_IN_DEG)*ROBOTS_RADIUS;
+  v1[0] = cos(newhead * RAD_IN_DEG) * ROBOTS_RADIUS;
+  v1[1] = sin(newhead * RAD_IN_DEG) * ROBOTS_RADIUS;
   //prepearing to calculate shortest distance to wall
-  double gdistance = 1, distance;
-  for (int i = 0; i < environment_ -> wallcount(); i++)
+  double minDistance = 1.0, distance;
+  for (int i = 0; i < environment_->wallCount(); i++)
   {
     //wall's b1, b2 and v2, where v2 is walls length
     b1[0] = environment_->getCorner(i, 0);
@@ -77,25 +91,25 @@ INL double Robot::sensorDistToWall(double dhead)
     det12 = v1[0] * B[1] - v1[1] * B[0];
     det2 = v1[0] * v2[1] - v1[1] * v2[0];
     //checks whether sensor and wall aren't parallel
-    if (det2 != 0)
+    if (det2 != 0.0)
     {
       //t1 is distance to wall in units of spindulys + 1
       t1 = det11 / det2;
       //t2 is a place in wall vector, where sensor is pointing
       t2 = -det12 / det2;
       //check if censor is "hitting" the wall and if it is not behind the sensor
-      if (t2 <= 1 && t2 >= 0 && t1 >= 0)
+      if (t2 <= 1.0 && t2 >= 0.0 && t1 >= 0.0)
       {
         //distance now is distance to wall in units of spindulys
-        distance = t1 - 1;
+        distance = t1 - 1.0;
         //if distance is more than sensor can see
         if (distance >= MAX_DISTANCE_SEEN)
-          distance = 1;
+          distance = 1.0;
         else
         {
           //if robot is hitting a wall
-          if (distance < 0)
-            distance = 0;
+          if (distance < 0.0)
+            distance = 0.0;
           else
           {
             //distance is finally double between 0 and 1 if it is in range
@@ -104,27 +118,27 @@ INL double Robot::sensorDistToWall(double dhead)
         }
       }
       else
-        distance = 1;
+        distance = 1.0;
     }
     //if wall and sensor are parallel
     else
-      distance = 1;
+      distance = 1.0;
     //check if this is the smallest distance
-    if (distance < gdistance)
-      gdistance = distance;
+    if (distance < minDistance)
+      minDistance = distance;
   }
   //returns global distance as double between 0 and 1
-  return gdistance;
+  return minDistance;
 }
 
 //algorithm is borrowed from some delphi site
-INL double Robot::distToWall()
+INL double Robot::distToWallSq()
 {
   double p1, p2, x1, y1, x2, y2, dx, dy, Ratio, l1, l2;
   //simmilar to CRobot::sensordisttowall. gdistance is made to be as large as possible, so that first
   //  calculation would overwrite it
-  double gdistance = 5000000.0, distance;
-  for (int i=0; i<environment_->wallcount(); i++)
+  double minDistanceSq = 5000000.0, distanceSq;
+  for (int i = 0; i < environment_->wallCount(); i++)
   {
     p1=position_[0];
     p2=position_[1];
@@ -138,108 +152,70 @@ INL double Robot::distToWall()
     Ratio = ((p1 - x1) * dx + (p2 - y1) * dy) / (dx * dx + dy * dy);
     //if distance is hitting not in segment, distance is calculated by simple pitagorian rules
     if (Ratio < 0)
-      distance = sqrt((p1-x1)*(p1-x1)+(p2-y1)*(p2-y1));
-    else if (Ratio>1)
-      distance = sqrt((p1-x2)*(p1-x2)+(p2-y2)*(p2-y2));
+      distanceSq = (p1 - x1) * (p1 - x1) + (p2 - y1) * (p2 - y1);
+    else if (Ratio > 1)
+      distanceSq = (p1 - x2) * (p1 - x2) + (p2 - y2) * (p2 - y2);
     else
     //if distance is hitting in the segment-wall, then distance is calculated differently
     {
       l1 = (1 - Ratio) * x1 + Ratio * x2;
       l2 = (1 - Ratio) * y1 + Ratio * y2;
-      distance = sqrt((p1 - l1) * (p1 -l1) + (p2 - l2) * (p2 - l2));
+      distanceSq = (p1 - l1) * (p1 -l1) + (p2 - l2) * (p2 - l2);
     }
-    if (distance < gdistance)
-      gdistance = distance;
+    if (distanceSq < minDistanceSq)
+      minDistanceSq = distanceSq;
   }
-  return gdistance - ROBOTS_RADIUS;
+  return minDistanceSq - ROBOTS_RADIUSSQ;
 }
 
-INL double Robot::distToPoint(double &x, double &y)
+INL double Robot::distToPointSq(double &x, double &y)
 {
   double dx = position_[0] - x;
   double dy = position_[1] - y;
-  return sqrt((dx)*(dx)+(dy)*(dy));
+  return (dx)*(dx)+(dy)*(dy);
 }
 
-INL double Robot::angleToPoint(double &x, double &y, double dhead)
+INL double Robot::angleToPoint(double &x, double &y, double deltaHeading)
 {
-  double c = distToPoint(x, y);
-  double angle = acos((x-position_[0])/c)/RAD_IN_DEG;
-  if (position_[1] >= y)
-    angle = -angle;
-  angle -= head_ + dhead;
-  angle = (angle > 180) ? angle-360 : (angle < -180) ? angle + 360 : angle;
+  double angle = atan2(y - position_[1], x - position_[0]) / RAD_IN_DEG;
+  angle -= head_ + deltaHeading;
   return angle;
 }
 
-INL void Robot::rotate(double vect[], double rot, double s)
+INL void Robot::rotate(double rot)
 {
   //maximum allowed turning rate at current speed
-  double alfa = MAX_ROTATION_SPEEED
-      - (MAX_ROTATION_SPEEED - MIN_ROTATION_SPEED) * s / MAX_SPEED;
+  double alfa = MAX_ROTATION_SPEED - (MAX_ROTATION_SPEED - MIN_ROTATION_SPEED)
+      * speed_ / MAX_SPEED;
   //current rotation speed in rads/s
   alfa *= rot * UPDATE_INTERVAL * RAD_IN_DEG;
-  //x and y stands for vector to rotate coordinates
-  double x = vect[0], y = vect[1];
-  //rotation matrix being applied
-  //[x]   [cos (alfa) -sin(alfa)]
-  //[ ] × [                     ] = rotated vector by alfa
-  //[y]   [sin (alfa)  cos(alfa)]
-  double cosAlfa = cos(alfa);
-  double sinAlfa = sin(alfa);
-  vect[0] = cosAlfa * x - sinAlfa * y;
-  vect[1] = sinAlfa * x + cosAlfa * y;
   //heading is updated and forced to appear in [-180;180] bounds
-  head_ += rot * MAX_ROTATION_SPEEED * UPDATE_INTERVAL;
+  head_ += alfa / RAD_IN_DEG;
   if (head_ < -180.0)
     head_ += 360;
   else if (head_ > 180.0)
     head_ -= 360;
 }
 
-INL void Robot::newPosition(double acc2, double rot)
+INL void Robot::accelerate(double acc)
 {
-  //current speed in m/s
-  double speed=sqrt(speedVector_[0]*speedVector_[0]+speedVector_[1]
-      *speedVector_[1]);
-  //lets rotate speed vector
-  rotate(speedVector_, rot, speed);
-  //acceleration vector is calculated
-  double x = cos(head_*RAD_IN_DEG);
-  double y = sin(head_*RAD_IN_DEG);
-  double ax=x*MAX_ACCELERATION*UPDATE_INTERVAL;
-  double ay=y*MAX_ACCELERATION*UPDATE_INTERVAL;
-  //backing up speed vector
-  double u1=speedVector_[0];
-  double u2=speedVector_[1];
-  //these ifs makes speedv appear closer to maxs*acc2 at maximum acceleraration speed
-  //if required, lesser acceleration is used (2nd and 4th ifs)
-  if ((speed/MAX_SPEED)>acc2 && (speed-MAX_SPEED*acc2)>(MAX_ACCELERATION
-      *UPDATE_INTERVAL))
-  {
-    speedVector_[0] = x*speed-ax;
-    speedVector_[1] = y*speed-ay;
-  }
-  else if ((speed/MAX_SPEED)>acc2 && (speed-MAX_SPEED*acc2)<=(MAX_ACCELERATION
-      *UPDATE_INTERVAL))
-  {
-    speedVector_[0] = x*MAX_SPEED*acc2;
-    speedVector_[1] = y*MAX_SPEED*acc2;
-  }
-  else if ((speed/MAX_SPEED)<acc2 && (MAX_SPEED*acc2-speed)>(MAX_ACCELERATION
-      *UPDATE_INTERVAL))
-  {
-    speedVector_[0] = x*speed+ax;
-    speedVector_[1] = y*speed+ay;
-  }
-  else if (speed==0 && acc2==0)
-    ;
+  if (speed_ > MAX_SPEED * acc)
+    speed_ -= MAX_ACCELERATION * UPDATE_INTERVAL;
   else
-  {
-    speedVector_[0] = x*MAX_SPEED*acc2;
-    speedVector_[1] = y*MAX_SPEED*acc2;
-  }
+    speed_ += MAX_ACCELERATION * UPDATE_INTERVAL;
+  if (speed_ < 0.0)
+    speed_ = 0.0;
+}
+
+INL void Robot::newPosition(double acc, double rot)
+{
+  //let's rotate speed vector
+  rotate(rot);
+  //let's accelerate speed vector
+  accelerate(acc);
   //new position is calculated
-  position_[0] += (speedVector_[0] + u1)/2*UPDATE_INTERVAL;
-  position_[1] += (speedVector_[1] + u2)/2*UPDATE_INTERVAL;
+  double speedX = cos(head_ * RAD_IN_DEG) * speed_;
+  double speedY = sin(head_ * RAD_IN_DEG) * speed_;
+  position_[0] += speedX * UPDATE_INTERVAL;
+  position_[1] += speedY * UPDATE_INTERVAL;
 }
