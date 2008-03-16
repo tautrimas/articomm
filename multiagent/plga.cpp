@@ -23,7 +23,7 @@ class Plga
     int newBarrier_;
     int newPopSize_;
     int threadCount_;
-    list<Pool> populations_;
+    std::list<Pool> populations_;
     Environment environment_;
     Benchmarker timer_, bigTimer_;
 };
@@ -69,7 +69,7 @@ void Plga::step()
     createPopulation();
 
   bool shouldPrint = false;
-  list<Pool>::iterator iterator = populations_.begin();
+  std::list<Pool>::iterator iterator = populations_.begin();
   for (int i = 1; iterator != populations_.end(); iterator++, i *= base_)
   {
     if (((generation_ % i == 0) && !(iterator->getIsPaused()))
@@ -93,7 +93,7 @@ void Plga::step()
     {
       if (iterator != populations_.begin())
       {
-        list<Pool>::iterator tempIterator = iterator;
+        std::list<Pool>::iterator tempIterator = iterator;
         ++iterator;
         populations_.erase(tempIterator);
       }
@@ -109,9 +109,9 @@ void Plga::step()
   // check if any pool needs removal
   if (populations_.size() != 1)
   {
-    list<Pool>::iterator iterator2 = populations_.begin();
+    std::list<Pool>::iterator iterator2 = populations_.begin();
     iterator2++;
-    list<Pool>::iterator iterator1 = populations_.begin();
+    std::list<Pool>::iterator iterator1 = populations_.begin();
     for (; iterator2 != populations_.end() && populations_.size() != 1;
         iterator1++, iterator2++)
     {
@@ -121,7 +121,7 @@ void Plga::step()
         {
           if (iterator1 != populations_.begin())
           {
-            list<Pool>::iterator tempIterator = iterator1;
+            std::list<Pool>::iterator tempIterator = iterator1;
             tempIterator--;
             populations_.erase(iterator1);
             iterator1 = tempIterator;
@@ -150,7 +150,7 @@ void Plga::step()
     evaluationsLastTime_ = evaluations_;
     
     iterator = populations_.begin();
-    for (int i = 0; iterator != populations_.end() && i < 4; ++iterator, ++i)
+    for (int i = 0; iterator != populations_.end() && i < 3; ++iterator, ++i)
       printf(" %4i %8.2f%c ||", iterator->getPoolSize(), iterator->getBest(),
           (iterator->getIsPaused()) ? '-' : '+');
     printf("\n");

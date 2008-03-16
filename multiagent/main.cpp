@@ -18,7 +18,6 @@
 
 #define INL
 
-#include "header.cpp"
 #include "random.cpp"
 
 Randomization R;
