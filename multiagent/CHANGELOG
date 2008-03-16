@@ -3,7 +3,7 @@ Multi-Agent 1.2.0
   + Even more optimizations and partly rewriten physics engine
   + Formated output a lot
   + Bug fix for infinite loop
-  + No more than 4 populations on the screen
+  + No more than 3 populations on the screen
   + Can set thread count for simulations at command line
   
 Multi-Agent 1.1.5
