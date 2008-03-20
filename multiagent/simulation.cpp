@@ -32,9 +32,6 @@ class Simulation
       member_ = member;
       environment_ = environment;
     }
-    ~Simulation()
-    {
-    }
     void runSim(bool);
     double getScore()
     {
@@ -213,9 +210,9 @@ void Simulation::runSim(bool printprogress)
 
       ann.setNode(SENSOR_COUNT + 3, robots[nr].angleToPoint(
           robotEndPositions[nr][0], robotEndPositions[nr][1], 0));
-      double distanceToDestination = robots[nr].distToPointSq(
+      double distanceToDestinationSq = robots[nr].distToPointSq(
           robotEndPositions[nr][0], robotEndPositions[nr][1]);
-      ann.setNode(SENSOR_COUNT + 4, distanceToDestination);
+      ann.setNode(SENSOR_COUNT + 4, distanceToDestinationSq);
 
       ann.process();
       //      printf("%f %f\n", ann.getOutputNode(0), (ann.getOutputNode(1) - 0.5) * 2);
@@ -223,7 +220,7 @@ void Simulation::runSim(bool printprogress)
       // New position is counted. ANN's outputs are acceleration and rotation
       // speed. Values from ANN are from 0 to 1 so they must be converted to 
       // [-1;1] for normal operation.
-      robots[nr].newPosition(ann.getOutputNode(1), (ann.getOutputNode(2) - 0.5)
+      robots[nr].newPosition(ann.getOutputNode(2), (ann.getOutputNode(1) - 0.5)
           * 2.0);
       /*ann.getNode(ann.getNodeCount()-2),
        (ann.getNode(ann.getNodeCount()-1)-0.5)*2.0);*/
@@ -234,7 +231,7 @@ void Simulation::runSim(bool printprogress)
             robots[nr].head_ };
         outputSimulationStep(data, sizeof(data) / sizeof(double));
       }
-      simulationFitness -= distanceToDestination;
+      simulationFitness -= distanceToDestinationSq;
       /*if (distanceToDestination < ROBOTS_RADIUS)
        didReachDestination[nr] = true;
        bool allReachedDestinations = true;

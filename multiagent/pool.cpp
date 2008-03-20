@@ -13,8 +13,6 @@
 //     You should have received a copy of the GNU General Public License
 //     along with ARTIcomm.  If not, see <http://www.gnu.org/licenses/>.
 
-//structure for one member. gene is an array for weights and fittness is member's gene
-
 #define IN 6   //number of input nodes
 #define HID 4  //number of hidden nodes
 #define OUT 2  //output nodes
@@ -148,8 +146,8 @@ void Pool::randomizeAll()
     for (int j = 0; j < WEIGHT_COUNT; j++)
     {
       //we use gaussian funcion to make more values closer to zero and some closer to 1.
-      double x = R.randDouble(-2, 2);
-      popul_[i].gene[j] = 1000 * exp(-x * x);
+      //double x = R.randDouble(-2, 2);
+      popul_[i].gene[j] = R.randDouble(-2.0, 2.0);//1 * exp(-x * x);
     }
     /*for (int j=wkiekis;j<wkiekis+sensorcount;j++)
      popul[i].gene[j]=(j-wkiekis)*110.0-55.0;//R.randdouble(-180,180);*/

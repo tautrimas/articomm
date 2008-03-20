@@ -18,6 +18,7 @@ class Ann
   public:
     Ann(double*, double*, int, int, int);
     ~Ann();
+    void sigmoid(double& node);
     void process();
     int getNodeCount()
     {
@@ -45,7 +46,7 @@ INL void Ann::setNode(int node, double value)
 
 INL double Ann::getOutputNode(int node)
 {
-  return nodes_[nodeCount_ - out_ + node - 1];
+  return nodes_[nodeCount_ - node];
 }
 
 double Ann::getNode(int node)
@@ -75,25 +76,58 @@ Ann::~Ann()
   delete [] nodes_;
 }
 
+INL void Ann::sigmoid(double& x)
+{
+  /*if (nodes_[i] >= 1)
+   nodes_[i] = 1;
+   else
+   {
+   if (nodes_[i]<=-1)
+   nodes_[i] = 0;
+   else
+   //nodes_[i] = 0.5 + nodes_[i] * (1 - fabs(nodes_[i]) / 2);
+   nodes_[i] = 0.5 + 0.5 * nodes_[i];
+   }
+   */
+  if (x < 0.5)
+  {
+    if (x > -0.5)
+    {
+      x =  0.8 * x + 0.5;
+    }
+    else
+    {
+      if (x > -1.0)
+      {
+        x = 0.2 * x + 0.2;
+      }
+      else
+      {
+        x = 0.0;
+      }
+    }
+  }
+  else
+  {
+    if (x < 1.0)
+    {
+      x = 0.2 * x + 0.8;
+    }
+    else x = 1.0;
+  }
+}
+
 INL void Ann::process()
 {
   for (int i = 0; i < in_; i++)
     for (int j = in_ + 1; j < in_ + hid_; j++)
       // weights_ are multiplied by nodes values and added to hidden nodes
       nodes_[j] += nodes_[i] * weights_[(j - in_ - 1) * in_ + i ];
-  for (int i=in_+1; i<in_+hid_; i++)
+  for (int i = in_ + 1; i < in_ + hid_; i++)
   {
     // that is a approximated (fast) sigmoid function. Resulting network[i] is in [0;1]
     // this is only hidden nodes
-    if (nodes_[i] >= 1)
-      nodes_[i] = 1;
-    else
-    {
-      if (nodes_[i]<=-1)
-        nodes_[i] = 0;
-      else
-        nodes_[i] = 0.5 + nodes_[i] * (1 - fabs(nodes_[i]) / 2);
-    }
+    sigmoid(nodes_[i]);
   }
   for (int i = in_; i < in_ + hid_; i++)
     for (int j = in_ + hid_; j < nodeCount_; j++)
@@ -102,15 +136,7 @@ INL void Ann::process()
   for (int i = in_ + hid_; i < nodeCount_; i++)
   {
     // again sigmoid, but this time output nodes are processed
-    if (nodes_[i]>=1)
-      nodes_[i] = 1;
-    else
-    {
-      if (nodes_[i]<=-1)
-        nodes_[i] = 0;
-      else
-        nodes_[i] = 0.5 + nodes_[i] * (1 - fabs(nodes_[i]) / 2);
-    }
+    sigmoid(nodes_[i]);
   }
 }
 

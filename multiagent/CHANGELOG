@@ -1,3 +1,6 @@
+Multi-Agent 1.2.2
+  + 20% speed gain because of aproximated trigonometry and sigmoid functions
+
 Multi-Agent 1.2.0
   * Speed measurements
   + Even more optimizations and partly rewriten physics engine

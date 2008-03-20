@@ -145,7 +145,7 @@ void Plga::step()
   {
     timer_.end();
 
-    printf("%6i << %6i || %6.3lf ms/sim ||--||", evaluations_, newBarrier_,
+    printf("%6i << %6i || %5.2lf ms/sim ||--||", evaluations_, newBarrier_,
         timer_.getTimeMS() / (evaluations_ - evaluationsLastTime_));
     evaluationsLastTime_ = evaluations_;
     

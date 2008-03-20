@@ -32,13 +32,6 @@
 class Robot
 {
   public:
-    Robot()
-    {
-    }
-    ;
-    ~Robot()
-    {
-    }
     void initialize(Environment*);
     void rotate(double rot); //rotates speed vector. needs desired rotation speed and current speed
     void accelerate(double acc); //accelerates speed vector
@@ -55,6 +48,36 @@ class Robot
     Environment* environment_;
 };
 
+#define PI 3.1415926535897932384626433832795
+#define PI05 1.57079632679489661923132169163975
+#define PI2 6.283185307179586476925286766559
+#define PI15 4.71238898038468985769396507491925
+
+INL double fastSinInRange(const double& fAngle)
+{
+  double x2 = fAngle * fAngle;
+  double x3 = x2 * fAngle;
+  double x5 = x2 * x3;
+  return 7.61e-03 * x5 - 1.6605e-01 * x3 + fAngle;
+}
+
+INL double fastSin(double x)
+{
+  while (x < -PI05)
+    x += PI2;
+  while (x > PI15)
+    x -= PI2;
+  if (x < PI05)
+    return fastSinInRange(x);
+  else
+    return fastSinInRange(PI - x);
+}
+
+INL double fastCos(const double& x)
+{
+  return fastSin(x + PI05);
+}
+
 INL void Robot::initialize(Environment* environment)
 {
   speed_ = 0.0;
@@ -70,8 +93,8 @@ INL double Robot::sensorDistToWall(double dhead)
   //a2 and a1 is calculated. Then we have v1 which is vector of a sensor. Its length is spindulys.
   a1[0] = position_[0];
   a1[1] = position_[1];
-  v1[0] = cos(newhead * RAD_IN_DEG) * ROBOTS_RADIUS;
-  v1[1] = sin(newhead * RAD_IN_DEG) * ROBOTS_RADIUS;
+  v1[0] = fastCos(newhead * RAD_IN_DEG) * ROBOTS_RADIUS;
+  v1[1] = fastSin(newhead * RAD_IN_DEG) * ROBOTS_RADIUS;
   //prepearing to calculate shortest distance to wall
   double minDistance = 1.0, distance;
   for (int i = 0; i < environment_->wallCount(); i++)
@@ -185,8 +208,8 @@ INL double Robot::angleToPoint(double &x, double &y, double deltaHeading)
 INL void Robot::rotate(double rot)
 {
   //maximum allowed turning rate at current speed
-  double alfa = MAX_ROTATION_SPEED - (MAX_ROTATION_SPEED - MIN_ROTATION_SPEED)
-      * speed_ / MAX_SPEED;
+  double alfa= MAX_ROTATION_SPEED - (MAX_ROTATION_SPEED - MIN_ROTATION_SPEED)
+  * speed_ / MAX_SPEED;
   //current rotation speed in rads/s
   alfa *= rot * UPDATE_INTERVAL * RAD_IN_DEG;
   //heading is updated and forced to appear in [-180;180] bounds
@@ -214,8 +237,8 @@ INL void Robot::newPosition(double acc, double rot)
   //let's accelerate speed vector
   accelerate(acc);
   //new position is calculated
-  double speedX = cos(head_ * RAD_IN_DEG) * speed_;
-  double speedY = sin(head_ * RAD_IN_DEG) * speed_;
+  double speedX = fastCos(head_ * RAD_IN_DEG) * speed_;
+  double speedY = fastSin(head_ * RAD_IN_DEG) * speed_;
   position_[0] += speedX * UPDATE_INTERVAL;
   position_[1] += speedY * UPDATE_INTERVAL;
 }

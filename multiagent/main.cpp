@@ -16,7 +16,7 @@
 // g++ main.cpp -o main -O2 && chmod u+x main && time ./main
 // g++ main.cpp -o main -g && chmod u+x main && ddd main
 
-#define INL
+#define INL inline
 
 #include "random.cpp"
 
