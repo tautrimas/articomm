@@ -1,3 +1,7 @@
+About:
+
+This project is about demonstrating the power of AI. 5 totaly dumb robots are being placed on the map and are evolved to perform a task of travelling to designated point on the map. Basicaly all robots must travel to the other end of the sandbox as fast as possible and stay on destination as closely at possible upon arrival. You, the user, are being shown evolution phase (increasing fitness value of 5 robots) and visualization of last best variant when you hit ENTER.
+
 >>Just to view DEMO:
 1. Run ./animateagent
 

@@ -18,4 +18,4 @@ evolution:
 animation:
 	g++ animateagent.cpp -o animateagent -lX11 -lXi -lXmu -lglut -lGL -lGLU -lm -O2
 gprof:
-	g++ main.cpp -o profilation -g -pg -lpthread -O2 && ./profilation && gprof profilation -b > profile.txt
+	g++ main.cpp -o profilation -g -pg -lpthread -O2 && ./profilation 1 && gprof profilation -b > profile.txt
