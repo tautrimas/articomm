@@ -18,7 +18,8 @@
 #define OUT 2  //output nodes
 #define WEIGHT_COUNT ((IN+1)*(HID)+(HID+1)*OUT) //number of weights
 #define SENSOR_COUNT 2 //how many sensors
-#define GENE_COUNT (SENSOR_COUNT + WEIGHT_COUNT)
+#define ROBOT_COUNT 5
+#define GENE_COUNT ((SENSOR_COUNT + WEIGHT_COUNT) * ROBOT_COUNT)
 
 struct PoolMember
 {
@@ -101,7 +102,7 @@ PoolMember Pool::crossover(PoolMember member)
   if ((rand() % 5) < 3)
   {
     int crosspoint1 = rand() % (GENE_COUNT);
-    int crosspoint2 = crosspoint1+(rand() % (GENE_COUNT-crosspoint1));
+    int crosspoint2 = crosspoint1 + (rand() % (GENE_COUNT - crosspoint1));
     int member2 = rand() % (poolSize_ / 3);
     for (int i = crosspoint1; i < crosspoint2; i++)
       member.gene[i] = popul_[member2].gene[i];
@@ -112,7 +113,7 @@ PoolMember Pool::crossover(PoolMember member)
 PoolMember Pool::mutate(PoolMember member, double& delta)
 {
   double ratio = 0.1; //R.randdouble(0.15,1.0);
-  for (int i = 0; i < GENE_COUNT - 2; i++)
+  for (int i = 0; i < GENE_COUNT; i++)
   {
     //simple mutation
     if (R.randDouble() < ratio)
@@ -121,7 +122,6 @@ PoolMember Pool::mutate(PoolMember member, double& delta)
   }
   /*for (int i=wcount;i<genecount;i++)
    member.gene[i] += R.randdouble(-1.0,1.0);*/
-  member.fitness = -9999.0;
   return member;
 }
 
@@ -131,11 +131,13 @@ void Pool::mutateAll(double delta)
   {
     popul_[i] = crossover(popul_[i - (poolSize_ / 3)]);
     popul_[i] = mutate(popul_[i - (poolSize_ / 3)], delta);
+    popul_[i].fitness = -9999.0;
   }
   for (int i = ((poolSize_ / 3) * 2); i < poolSize_; i++)
   {
     popul_[i] = crossover(popul_[i - (poolSize_ / 3)]);
     popul_[i] = mutate(popul_[i - ((poolSize_ / 3) * 2)], delta);
+    popul_[i].fitness = -9999.0;
   }
 }
 
@@ -143,16 +145,20 @@ void Pool::randomizeAll()
 {
   for (int i = 0; i < poolSize_; i++)
   {
-    for (int j = 0; j < WEIGHT_COUNT; j++)
+    for (int j = 0; j < ROBOT_COUNT; ++j)
     {
-      //we use gaussian funcion to make more values closer to zero and some closer to 1.
-      //double x = R.randDouble(-2, 2);
-      popul_[i].gene[j] = R.randDouble(-2.0, 2.0);//1 * exp(-x * x);
+      for (int k = 0; k < WEIGHT_COUNT; k++)
+      {
+        //we use gaussian funcion to make more values closer to zero and some closer to 1.
+        //double x = R.randDouble(-2, 2);
+        popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * j + k] = R.randDouble(-2.0, 2.0);
+        //1 * exp(-x * x);
+      }
+      /*for (int j=wkiekis;j<wkiekis+sensorcount;j++)
+       popul[i].gene[j]=(j-wkiekis)*110.0-55.0;//R.randdouble(-180,180);*/
+      popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 2] = -55.0;
+      popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 1] = 55.0;
     }
-    /*for (int j=wkiekis;j<wkiekis+sensorcount;j++)
-     popul[i].gene[j]=(j-wkiekis)*110.0-55.0;//R.randdouble(-180,180);*/
-    popul_[i].gene[GENE_COUNT - 2] = -55.0;
-    popul_[i].gene[GENE_COUNT - 1] = 55.0;
     popul_[i].fitness = -9999.0;
   }
 }
@@ -248,21 +254,8 @@ void Pool::step()
   //replicate first half while mutating them and then evaluate
   mutateAll(( (generation_ % 4) > 0) ? 0.01 : 2.0);
   scoreAll();
-  /*if (generation_ * getPoolSize() > 25000)
-   scoreAll();*/
   sort();
-  /*
-   // output evolution progress if leader changed
-   if ((senas < pool->getbest()) && (((generation*pool->getpoolsize()) % GEN)!=0))
-   printf("%12.2f %12.2f %6d\n",pool->getbest(), pool->getbest()-senas, generation*pool->getpoolsize());
-   // output evolution progress after some time
-   if (((generation*pool->getpoolsize()) % GEN)==0) {
-   printf("%12.2f %12.2f %6d*\n",pool->getbest(), pool->getbest()-senas, generation*pool->getpoolsize());
-   stopit = Stop();
-   pool->outputgenes();
-   */
-
-  if (senas >= getBest() /*|| (getBest() - senas < getBest() * 0.005)*/)
+  if (senas >= getBest())
     ++stable_;
   if (stable_ * poolSize_ > 20000)
     isPaused_ = true;
