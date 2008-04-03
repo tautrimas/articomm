@@ -15,9 +15,6 @@
 
 #define UPDATE_INTERVAL 0.04 //every this amount of seconds, posion and speed vectors will be recalculated
 #define ROUND_LENGTH 12.0 //round length in seconds
-#define ROBOT_COUNT 5
-
-
 #include "robot.cpp"
 #include "ann.cpp"
 
@@ -87,7 +84,13 @@ void Simulation::runSim(bool printprogress)
     robots[i].position_[0] = robotStartPositions[i][0];
     robots[i].position_[1] = robotStartPositions[i][1];
   }
-  Ann ann(member_.gene, member_.gene + WEIGHT_COUNT, IN, HID, OUT);
+  Ann anns[ROBOT_COUNT];
+  for (int i = 0; i < ROBOT_COUNT; ++i)
+  {
+    double* start = member_.gene + (WEIGHT_COUNT + SENSOR_COUNT) * i;
+    double* end = start + WEIGHT_COUNT;
+    anns[i].initialise(start, end, IN, HID, OUT);
+  }
 
   //fittnes is starting from zero
   double simulationFitness = 0;
@@ -190,38 +193,42 @@ void Simulation::runSim(bool printprogress)
       oldPosition[nr][1] = robots[nr].position_[1];
 
       //all sensor states are being updated
-      ann.clearNodes();
+      anns[nr].clearNodes();
       for (int i = 0; i < SENSOR_COUNT; i++)
+      {
+        int index = (WEIGHT_COUNT + SENSOR_COUNT) * (nr + 1) - SENSOR_COUNT;
         //their states are transmited to ANN inputs
-        ann.setNode(i + 1,
-            robots[nr].sensorDistToWall(member_.gene[WEIGHT_COUNT+i]));
+        anns[nr].setNode(i + 1,
+            robots[nr].sensorDistToWall(member_.gene[index + i]));
+      }
 
       if (fabs(angleToRobot) > 90.0 || shortestDistanceSq > MAX_DISTANCE_SEENSQ
-          * ROBOTS_RADIUSSQ)
+      * ROBOTS_RADIUSSQ)
       {
-        ann.setNode(SENSOR_COUNT + 1, 0.0); // null angle
-        ann.setNode(SENSOR_COUNT + 2, 1.0); // max distance 1.0
+        anns[nr].setNode(SENSOR_COUNT + 1, 0.0); // null angle
+        anns[nr].setNode(SENSOR_COUNT + 2, 1.0); // max distance 1.0
       }
       else
       {
-        ann.setNode(SENSOR_COUNT + 1, angleToRobot);
-        ann.setNode(SENSOR_COUNT + 2, shortestDistanceSq / ROBOTS_RADIUSSQ - 1); // incorrect!!
+        anns[nr].setNode(SENSOR_COUNT + 1, angleToRobot);
+        anns[nr].setNode(SENSOR_COUNT + 2, shortestDistanceSq / ROBOTS_RADIUSSQ
+            - 1); // incorrect!!
       }
 
-      ann.setNode(SENSOR_COUNT + 3, robots[nr].angleToPoint(
+      anns[nr].setNode(SENSOR_COUNT + 3, robots[nr].angleToPoint(
           robotEndPositions[nr][0], robotEndPositions[nr][1], 0));
       double distanceToDestinationSq = robots[nr].distToPointSq(
           robotEndPositions[nr][0], robotEndPositions[nr][1]);
-      ann.setNode(SENSOR_COUNT + 4, distanceToDestinationSq);
+      anns[nr].setNode(SENSOR_COUNT + 4, distanceToDestinationSq);
 
-      ann.process();
+      anns[nr].process();
       //      printf("%f %f\n", ann.getOutputNode(0), (ann.getOutputNode(1) - 0.5) * 2);
 
       // New position is counted. ANN's outputs are acceleration and rotation
       // speed. Values from ANN are from 0 to 1 so they must be converted to 
       // [-1;1] for normal operation.
-      robots[nr].newPosition(ann.getOutputNode(2), (ann.getOutputNode(1) - 0.5)
-          * 2.0);
+      robots[nr].newPosition(anns[nr].getOutputNode(2),
+          (anns[nr].getOutputNode(1) - 0.5) * 2.0);
       /*ann.getNode(ann.getNodeCount()-2),
        (ann.getNode(ann.getNodeCount()-1)-0.5)*2.0);*/
 

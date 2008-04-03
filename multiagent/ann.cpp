@@ -16,8 +16,8 @@
 class Ann
 {
   public:
-    Ann(double*, double*, int, int, int);
     ~Ann();
+    void initialise(double*, double*, int, int, int);
     void sigmoid(double& node);
     void process();
     int getNodeCount()
@@ -54,7 +54,7 @@ double Ann::getNode(int node)
   return nodes_[node];
 }
 
-Ann::Ann(double* weightsStart, double* weightsEnd, int in, int hid, int out)
+void Ann::initialise(double* weightsStart, double* weightsEnd, int in, int hid, int out)
 {
   in_ = in + 1;
   hid_ = hid + 1;
