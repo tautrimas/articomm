@@ -50,24 +50,28 @@ int main(int argc, char* argv[])
     sscanf(argv[1], "%i", &threadsForPool);
   }
   ThreadArgument* argument = new ThreadArgument;
-  argument->plga = new Plga(6, 3, 6, threadsForPool);
+  argument->plga = new Plga(6, 4, 6, threadsForPool);
   argument->stop = false;
   Thread thread;
   thread.run(evolveRobots, argument);
 
-  /*Plga plga(600, 3, 20000000);
-   for (int i = 0; i < 1000; ++i)
+  /*for (int i = 0; i < 10; ++i)
+   {
+   Plga plga(6, 3, 6, threadsForPool);
+   for (; plga.getEvaluations() <= 12000;)
    {
    plga.step();
    }
-   plga.finish();*/
+   plga.finish();
+   }*/
+
   getc(stdin);
   argument->stop = true;
   thread.join();
   argument->plga->finish();
   delete argument->plga;
   delete argument;
-  
+
   puts("");
   puts("Evolution complete! Go ahead - run: make animation && ./animateagent");
   puts("");

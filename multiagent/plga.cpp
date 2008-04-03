@@ -3,7 +3,8 @@
 
 struct Population
 {
-    Pool pool();
+    Pool* pool;
+    int interval;
 };
 
 class Plga
@@ -13,6 +14,10 @@ class Plga
     ~Plga();
     void step();
     void finish();
+    int getEvaluations()
+    {
+      return evaluations_;
+    }
 
   private:
     void createPopulation();
@@ -22,8 +27,9 @@ class Plga
     int base_;
     int newBarrier_;
     int newPopSize_;
+    int newInterval_;
     int threadCount_;
-    std::list<Pool> populations_;
+    std::list<Population> populations_;
     Environment environment_;
     Benchmarker timer_, bigTimer_;
 };
@@ -34,16 +40,16 @@ Plga::Plga(int popSize, int base, int barrier, int threadCount)
   evaluations_ = 0;
   evaluationsLastTime_ = 0;
   newPopSize_ = popSize;
-  generation_ = 1;
+  generation_ = 0;
   base_ = base;
   environment_.initializeWalls();
+  threadCount_ = threadCount;
+  newInterval_ = 1;
 
   createPopulation();
   newBarrier_ = barrier;
   timer_.start();
   bigTimer_.start();
-
-  threadCount_ = threadCount;
 }
 
 Plga::~Plga()
@@ -53,13 +59,17 @@ Plga::~Plga()
 
 void Plga::createPopulation()
 {
-  Pool* temp;
-  temp = new Pool;
+  Population* temp;
+  temp = new Population;
+  temp->pool = new Pool;
+  temp->interval = newInterval_;
+
   populations_.push_back(*temp);
-  populations_.back().initialize(newPopSize_, &environment_, threadCount_);
-  populations_.back().randomizeAll();
+  populations_.back().pool->initialize(newPopSize_, &environment_, threadCount_);
+  populations_.back().pool->randomizeAll();
   newPopSize_ *= 2;
   newBarrier_ *= base_;
+  newInterval_ *= base_;
 }
 
 void Plga::step()
@@ -69,14 +79,14 @@ void Plga::step()
     createPopulation();
 
   bool shouldPrint = false;
-  std::list<Pool>::iterator iterator = populations_.begin();
+  std::list<Population>::iterator iterator = populations_.begin();
   for (int i = 1; iterator != populations_.end(); iterator++, i *= base_)
   {
-    if (((generation_ % i == 0) && !(iterator->getIsPaused()))
-        || populations_.size() == 1)
+    if ((generation_ % iterator->interval == 0)
+        && !iterator->pool->getIsPaused())
     {
-      iterator->step();
-      evaluations_ += iterator->getPoolSize();
+      iterator->pool->step();
+      evaluations_ += iterator->pool->getPoolSize();
       shouldPrint = true;
     }
   }
@@ -84,7 +94,7 @@ void Plga::step()
   bool isAnyoneActive = false;
   for (iterator = populations_.begin(); iterator != populations_.end();)
   {
-    if (!iterator->getIsPaused())
+    if (!iterator->pool->getIsPaused())
     {
       isAnyoneActive = true;
       ++iterator;
@@ -93,7 +103,7 @@ void Plga::step()
     {
       if (iterator != populations_.begin())
       {
-        std::list<Pool>::iterator tempIterator = iterator;
+        std::list<Population>::iterator tempIterator = iterator;
         ++iterator;
         populations_.erase(tempIterator);
       }
@@ -104,24 +114,24 @@ void Plga::step()
     }
   }
   if (!isAnyoneActive)
-    populations_.front().resetStability();
+    populations_.front().pool->resetStability();
 
   // check if any pool needs removal
   if (populations_.size() != 1)
   {
-    std::list<Pool>::iterator iterator2 = populations_.begin();
+    std::list<Population>::iterator iterator2 = populations_.begin();
     iterator2++;
-    std::list<Pool>::iterator iterator1 = populations_.begin();
+    std::list<Population>::iterator iterator1 = populations_.begin();
     for (; iterator2 != populations_.end() && populations_.size() != 1;
         iterator1++, iterator2++)
     {
       if (populations_.size() > 2)
       {
-        if (iterator1->getBest() <= iterator2->getBest())
+        if (iterator1->pool->getBest() < iterator2->pool->getBest())
         {
           if (iterator1 != populations_.begin())
           {
-            std::list<Pool>::iterator tempIterator = iterator1;
+            std::list<Population>::iterator tempIterator = iterator1;
             tempIterator--;
             populations_.erase(iterator1);
             iterator1 = tempIterator;
@@ -134,25 +144,26 @@ void Plga::step()
           }
         }
       }
-      else if (iterator1->getBest() <= iterator2->getBest())
+      else if (iterator1->pool->getBest() < iterator2->pool->getBest())
       {
         populations_.erase(iterator1);
         iterator2 = populations_.end();
       }
     }
   }
-  if (shouldPrint)
+  if (shouldPrint)//false)//
   {
     timer_.end();
 
     printf("%6i << %6i || %5.2lf ms/sim ||--||", evaluations_, newBarrier_,
         timer_.getTimeMS() / (evaluations_ - evaluationsLastTime_));
     evaluationsLastTime_ = evaluations_;
-    
+
     iterator = populations_.begin();
     for (int i = 0; iterator != populations_.end() && i < 3; ++iterator, ++i)
-      printf(" %4i %8.2f%c ||", iterator->getPoolSize(), iterator->getBest(),
-          (iterator->getIsPaused()) ? '-' : '+');
+      printf(" %4i %8.2f%c ||", iterator->pool->getPoolSize(),
+          iterator->pool->getBest(), (iterator->pool->getIsPaused()) ? '-'
+              : '+');
     printf("\n");
 
     /*Robot robot;
@@ -183,13 +194,14 @@ void Plga::finish()
   printf("Total time: %.1f s\n", bigTimer_.getTimeS());
   printf("Average ms / simulation: %.4f ms\n", bigTimer_.getTimeMS()
       / evaluations_);
+  printf("Smallest population size at the end: %i\n", populations_.front().pool->getPoolSize());
 
   puts("\nIntergrity:\nAll of these 4 should be equal:");
-  printf("\n%f\n", populations_.front().getBest());
-  populations_.front().score(0, false);
-  printf("%f\n", populations_.front().getBest());
-  populations_.front().score(0, false);
-  printf("%f\n", populations_.front().getBest());
-  populations_.front().score(0, true);
-  printf("%f\n", populations_.front().getBest());
+  printf("\n%f\n", populations_.front().pool->getBest());
+  populations_.front().pool->score(0, false);
+  printf("%f\n", populations_.front().pool->getBest());
+  populations_.front().pool->score(0, false);
+  printf("%f\n", populations_.front().pool->getBest());
+  populations_.front().pool->score(0, true);
+  printf("%f\n", populations_.front().pool->getBest());
 }
