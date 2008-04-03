@@ -1,13 +1,10 @@
-- cpool public fix
+- pool public fix
 - create scene class for environment simulation
-- update every second
-- colourful output
 - evolutionized mini settings
   - selection pressure setting
   - crossover and mutation parameters
   - population size
   - node count???
 - 24000 size population expires too fast
-- atan2 aproximation
+- atan2 approximation
 - documentation doxygen
-- recalculate fitness less frequent

@@ -30,6 +30,7 @@ struct PoolMember
 #include "simulation.cpp"
 #include <algorithm>
 #include "benchmarker.cpp"
+#include "minievolution.cpp"
 
 class Pool
 {
@@ -42,9 +43,7 @@ class Pool
     Environment* environment_;
     int threadCount_;
   public:
-    Pool()
-    {
-    }
+    MiniEvolution* miniEvolution_;
     ~Pool();
     void initialize(int, Environment*, int);
     PoolMember crossover(PoolMember);
@@ -90,16 +89,23 @@ void Pool::initialize(int size, Environment* environment, int threadCount)
   isPaused_ = false;
   generation_ = 0;
   threadCount_ = threadCount;
+  miniEvolution_ = new MiniEvolution(1);
+  miniEvolution_->setValue(0, 0.8);
+  int RequiredScores = 512 / poolSize_;
+  if (RequiredScores < 1)
+    RequiredScores = 1;
+  miniEvolution_->setRequiredScores(RequiredScores);
 }
 
 Pool::~Pool()
 {
   delete [] popul_;
+  delete miniEvolution_;
 }
 
 PoolMember Pool::crossover(PoolMember member)
 {
-  if ((rand() % 5) < 3)
+  if (R.randDouble() < miniEvolution_->getValue(0))
   {
     int crosspoint1 = rand() % (GENE_COUNT);
     int crosspoint2 = crosspoint1 + (rand() % (GENE_COUNT - crosspoint1));
@@ -115,7 +121,6 @@ PoolMember Pool::mutate(PoolMember member, double& delta)
   double ratio = 0.1; //R.randdouble(0.15,1.0);
   for (int i = 0; i < GENE_COUNT; i++)
   {
-    //simple mutation
     if (R.randDouble() < ratio)
       member.gene[i] += R.randDouble(-member.gene[i] * delta, member.gene[i]
           * delta);
@@ -223,18 +228,18 @@ void Pool::scoreAll()
   Interval* intervals = new Interval[threadCount_];
   Thread* threads = new Thread[threadCount_];
 
-  int a = 0;
-  int b = poolSize_ / threadCount_;
+  int a = poolSize_ / 3;
+  int b = ((poolSize_ / 3) * 2) / threadCount_;
   for (int i = 0; i < threadCount_; ++i)
   {
     intervals[i].a = a;
-    if (i < poolSize_ % threadCount_)
+    if (i < ((poolSize_ / 3) * 2) % threadCount_)
       ++b;
     intervals[i].b = b;
     intervals[i].pool = this;
     threads[i].run(scorePart, &intervals[i]);
     a = b;
-    b += poolSize_ / threadCount_;
+    b += ((poolSize_ / 3) * 2) / threadCount_;
   }
   for (int i = 0; i < threadCount_; ++i)
   {
@@ -255,8 +260,11 @@ void Pool::step()
   mutateAll(( (generation_ % 4) > 0) ? 0.01 : 2.0);
   scoreAll();
   sort();
-  if (senas >= getBest())
+  if (senas == getBest())
     ++stable_;
+  else
+    stable_ = 0;
   if (stable_ * poolSize_ > 20000)
     isPaused_ = true;
+  miniEvolution_->addScore(senas / getBest());
 }

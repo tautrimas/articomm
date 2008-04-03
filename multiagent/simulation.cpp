@@ -198,8 +198,7 @@ void Simulation::runSim(bool printprogress)
       {
         int index = (WEIGHT_COUNT + SENSOR_COUNT) * (nr + 1) - SENSOR_COUNT;
         //their states are transmited to ANN inputs
-        anns[nr].setNode(i + 1,
-            robots[nr].sensorDistToWall(member_.gene[index + i]));
+        anns[nr].setNode(i + 1, robots[nr].sensorDistToWall(/*55.0)); //*/member_.gene[index + i]));
       }
 
       if (fabs(angleToRobot) > 90.0 || shortestDistanceSq > MAX_DISTANCE_SEENSQ

@@ -90,7 +90,7 @@ void Plga::createPopulation()
 void Plga::step()
 {
   ++generation_;
-  if (evaluations_ > newBarrier_)
+  if (evaluations_ > newBarrier_ && newPopSize_ < 5000)
     createPopulation();
 
   bool shouldPrint = false;
@@ -176,26 +176,10 @@ void Plga::step()
 
     iterator = populations_.begin();
     for (int i = 0; iterator != populations_.end() && i < 3; ++iterator, ++i)
-      printf(" %4i %8.2f%c ||", iterator->pool->getPoolSize(),
+      printf(" %4i %8.2f%c || %5.2f ||", iterator->pool->getPoolSize(),
           iterator->pool->getBest(), (iterator->pool->getIsPaused()) ? '-'
-              : '+');
+              : '+', iterator->pool->miniEvolution_->getValue(0));
     printf("\n");
-
-    /*Robot robot;
-     robot.initialize(&environment_);
-     robot.position_[0] = 0.1;
-     robot.position_[1] = -0.1;
-     robot.speedVector_[0] = 0.0;
-     robot.speedVector_[1] = 0.1;
-     robot.head_ = 90.0;
-     //robot.rotate(1.0, MAX_SPEEDSQ);
-     for (int i = 0; i < 10000; ++i)
-     {
-     robot.accelerate(0.0, robot.speedVector_[0]*robot.speedVector_[0]
-     + robot.speedVector_[1]*robot.speedVector_[1]);
-     }
-     printf("%f %f %f\n", robot.speedVector_[0], robot.speedVector_[1],
-     robot.head_);*/
 
     timer_.start();
   }
