@@ -78,42 +78,14 @@ Ann::~Ann()
 
 INL void Ann::sigmoid(double& x)
 {
-  /*if (nodes_[i] >= 1)
-   nodes_[i] = 1;
-   else
-   {
-   if (nodes_[i]<=-1)
-   nodes_[i] = 0;
-   else
-   //nodes_[i] = 0.5 + nodes_[i] * (1 - fabs(nodes_[i]) / 2);
-   nodes_[i] = 0.5 + 0.5 * nodes_[i];
-   }
-   */
-  if (x < 0.5)
-  {
-    if (x > -0.5)
-    {
-      x =  0.8 * x + 0.5;
-    }
-    else
-    {
-      if (x > -1.0)
-      {
-        x = 0.2 * x + 0.2;
-      }
-      else
-      {
-        x = 0.0;
-      }
-    }
-  }
+  if (x >= 1)
+    x = 1;
   else
   {
-    if (x < 1.0)
-    {
-      x = 0.2 * x + 0.8;
-    }
-    else x = 1.0;
+    if (x <= -1)
+      x = 0;
+    else
+      x = 0.5 + x * (1.0 - fabs(x) * 0.5);
   }
 }
 

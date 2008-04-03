@@ -15,6 +15,8 @@ clean:
 	rm -f $(OBJS) $(TARGET)
 evolution:
 	g++ main.cpp -o main -O3 -Wall -lpthread
+gdb:
+	g++ main.cpp -o main -O3 -g -Wall -lpthread
 animation:
 	g++ animateagent.cpp -o animateagent -lX11 -lXi -lXmu -lglut -lGL -lGLU -lm -O2
 gprof:
