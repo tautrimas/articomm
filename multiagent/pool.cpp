@@ -89,9 +89,14 @@ void Pool::initialize(int size, Environment* environment, int threadCount)
   isPaused_ = false;
   generation_ = 0;
   threadCount_ = threadCount;
-  miniEvolution_ = new MiniEvolution(1);
+  miniEvolution_ = new MiniEvolution(3);
   miniEvolution_->setValue(0, 0.8);
-  int RequiredScores = 512 / poolSize_;
+  miniEvolution_->setInterval(0, 0.0, 1.0);
+  miniEvolution_->setValue(1, 0.08);
+  miniEvolution_->setInterval(1, 0.0, 1.0);
+  miniEvolution_->setValue(2, 1.0);
+  miniEvolution_->setInterval(2, 0.0, 5.0);
+  int RequiredScores = 1024 / poolSize_;
   if (RequiredScores < 1)
     RequiredScores = 1;
   miniEvolution_->setRequiredScores(RequiredScores);
@@ -118,7 +123,7 @@ PoolMember Pool::crossover(PoolMember member)
 
 PoolMember Pool::mutate(PoolMember member, double& delta)
 {
-  double ratio = 0.1; //R.randdouble(0.15,1.0);
+  double ratio = miniEvolution_->getValue(1); //R.randdouble(0.15,1.0);
   for (int i = 0; i < GENE_COUNT; i++)
   {
     if (R.randDouble() < ratio)
@@ -229,7 +234,7 @@ void Pool::scoreAll()
   Thread* threads = new Thread[threadCount_];
 
   int a = poolSize_ / 3;
-  int b = ((poolSize_ / 3) * 2) / threadCount_;
+  int b = a + ((poolSize_ / 3) * 2) / threadCount_;
   for (int i = 0; i < threadCount_; ++i)
   {
     intervals[i].a = a;
@@ -257,7 +262,7 @@ void Pool::step()
   //copy old best
   double senas = getBest();
   //replicate first half while mutating them and then evaluate
-  mutateAll(( (generation_ % 4) > 0) ? 0.01 : 2.0);
+  mutateAll(miniEvolution_->getValue(2));
   scoreAll();
   sort();
   if (senas == getBest())
