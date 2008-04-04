@@ -176,9 +176,12 @@ void Plga::step()
 
     iterator = populations_.begin();
     for (int i = 0; iterator != populations_.end() && i < 3; ++iterator, ++i)
-      printf(" %4i %8.2f%c || %5.2f ||", iterator->pool->getPoolSize(),
+    {
+      printf(" %4i %8.2f%c %3.1f %5.3f ||", iterator->pool->getPoolSize(),
           iterator->pool->getBest(), (iterator->pool->getIsPaused()) ? '-'
-              : '+', iterator->pool->miniEvolution_->getValue(0));
+              : '+', iterator->pool->miniEvolution_->getValue(2),
+          iterator->pool->miniEvolution_->getValue(1));
+    }
     printf("\n");
 
     timer_.start();

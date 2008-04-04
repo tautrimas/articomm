@@ -19,13 +19,10 @@ struct MiniGeneArray
     double score;
 };
 
-/*struct CompareMiniGenes
- {
- bool operator()(MiniGeneArray& a, MiniGeneArray& b)
- {
- return a.score > b.score;
- }
- };*/
+struct MiniValueInterval
+{
+    double a, b;
+};
 
 bool operator<(const MiniGeneArray& a, const MiniGeneArray& b)
 {
@@ -52,10 +49,16 @@ class MiniEvolution
     {
       requiredScores_ = count;
     }
+    void setInterval(int gene, double a, double b)
+    {
+      intervals_[gene].a = a;
+      intervals_[gene].b = b;
+    }
   private:
     void mutateGenes(int parent, int child);
     void evolve();
     MiniGeneArray* genes_;
+    MiniValueInterval* intervals_;
 
     int requiredScores_;
     int geneCount_;
@@ -77,15 +80,21 @@ MiniEvolution::MiniEvolution(int geneCount, int popSize)
 
 void MiniEvolution::initialise(int geneCount, int popSize)
 {
-  genes_ = new MiniGeneArray[popSize];
-  for (int i = 0; i < popSize; ++i)
-  {
-    genes_[i].genes = new double[geneCount];
-  }
   popSize_ = popSize;
   geneCount_ = geneCount;
-  currentMember_ = popSize - 1;
-  currentScoring_ = 5;
+  genes_ = new MiniGeneArray[popSize_];
+  for (int i = 0; i < popSize; ++i)
+  {
+    genes_[i].genes = new double[geneCount_];
+  }
+  intervals_ = new MiniValueInterval[geneCount_];
+  for (int i = 0; i < geneCount_; ++i)
+  {
+    intervals_[i].a = -1000000000000000.0;
+    intervals_[i].b = 1000000000000000.0;
+  }
+  currentMember_ = popSize_ - 1;
+  currentScoring_ = 10000;
   requiredScores_ = 5;
   for (int i = 0; i < popSize_; ++i)
   {
@@ -100,6 +109,7 @@ MiniEvolution::~MiniEvolution()
     delete [] genes_[i].genes;
   }
   delete [] genes_;
+  delete [] intervals_;
 }
 
 double MiniEvolution::getValue(int val)
@@ -132,8 +142,17 @@ void MiniEvolution::mutateGenes(int parent, int child)
 {
   for (int i = 0; i < geneCount_; ++i)
   {
-    double x = R.randDouble(-1, 0.87);
-    genes_[child].genes[i] = genes_[parent].genes[i] * ((-x * x * x * x * x) + 1.0);
+    double x = R.randDouble(-1.4422, 0.9086);
+    genes_[child].genes[i] = genes_[parent].genes[i] * ((-x * x * x) + 1.0);
+
+    if (genes_[child].genes[i] > intervals_[i].b)
+    {
+      genes_[child].genes[i] = intervals_[i].b;
+    }
+    else if (genes_[child].genes[i] < intervals_[i].a)
+    {
+      genes_[child].genes[i] = intervals_[i].a;
+    }
   }
 }
 
@@ -143,6 +162,7 @@ void MiniEvolution::evolve()
   for (int i = 2; i < popSize_; ++i)
   {
     mutateGenes(i % 2, i);
+    genes_[i].score *= 1.0e-20;
   }
   for (int i = 0; i < popSize_; ++i)
   {
