@@ -32,7 +32,7 @@
 class Robot
 {
   public:
-    void initialize(Environment*);
+    void initialise(Environment*);
     void rotate(double rot); //rotates speed vector. needs desired rotation speed and current speed
     void accelerate(double acc); //accelerates speed vector
     void newPosition(double, double); //calculates new osition. needs acceleration (0 to 1) and rotaion speed (0 to 1)
@@ -78,7 +78,7 @@ INL double fastCos(const double& x)
   return fastSin(x + PI05);
 }
 
-INL void Robot::initialize(Environment* environment)
+INL void Robot::initialise(Environment* environment)
 {
   speed_ = 0.0;
   head_ = START_ROTATION;

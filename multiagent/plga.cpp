@@ -42,7 +42,6 @@ class Plga
     int base_;
     int newBarrier_;
     int newPopSize_;
-    int newInterval_;
     int threadCount_;
     std::list<Population> populations_;
     Environment environment_;
@@ -59,7 +58,6 @@ Plga::Plga(int popSize, int base, int barrier, int threadCount)
   base_ = base;
   environment_.initializeWalls();
   threadCount_ = threadCount;
-  newInterval_ = 1;
 
   createPopulation();
   newBarrier_ = barrier;
@@ -77,20 +75,21 @@ void Plga::createPopulation()
   Population* temp;
   temp = new Population;
   temp->pool = new Pool;
-  temp->interval = newInterval_;
+  temp->interval = newPopSize_;
 
   populations_.push_back(*temp);
-  populations_.back().pool->initialize(newPopSize_, &environment_, threadCount_);
+  populations_.back().pool->initialise(newPopSize_, &environment_, threadCount_);
   populations_.back().pool->randomizeAll();
-  newPopSize_ *= 2;
-  newBarrier_ *= base_;
-  newInterval_ *= base_;
+  if (evaluations_ < 20000)
+    newBarrier_ *= base_;
+  else
+    newBarrier_ += 20000;
 }
 
 void Plga::step()
 {
   ++generation_;
-  if (evaluations_ > newBarrier_ && newPopSize_ < 5000)
+  if (evaluations_ > newBarrier_)
     createPopulation();
 
   bool shouldPrint = false;
@@ -101,8 +100,9 @@ void Plga::step()
         && !iterator->pool->getIsPaused())
     {
       iterator->pool->step();
-      evaluations_ += iterator->pool->getPoolSize();
+      evaluations_ += iterator->pool->getPoolSize() - iterator->pool->getEliteCount();
       shouldPrint = true;
+      iterator->interval = iterator->pool->getPoolSize() - iterator->pool->getEliteCount();
     }
   }
 
@@ -177,10 +177,9 @@ void Plga::step()
     iterator = populations_.begin();
     for (int i = 0; iterator != populations_.end() && i < 3; ++iterator, ++i)
     {
-      printf(" %4i %8.2f%c %3.1f %5.3f ||", iterator->pool->getPoolSize(),
+      printf(" %4i %8.2f%c ||", iterator->pool->getPoolSize(),
           iterator->pool->getBest(), (iterator->pool->getIsPaused()) ? '-'
-              : '+', iterator->pool->miniEvolution_->getValue(2),
-          iterator->pool->miniEvolution_->getValue(1));
+              : '+');
     }
     printf("\n");
 

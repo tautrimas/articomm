@@ -45,9 +45,10 @@ class MiniEvolution
     }
     double getValue(int val);
     void addScore(double score);
-    void setRequiredScores(int count)
+    void addScore(double score, int liquid);
+    void setRequiredVolume(int count)
     {
-      requiredScores_ = count;
+      requiredVolume_ = count;
     }
     void setInterval(int gene, double a, double b)
     {
@@ -60,11 +61,11 @@ class MiniEvolution
     MiniGeneArray* genes_;
     MiniValueInterval* intervals_;
 
-    int requiredScores_;
+    int requiredVolume_;
     int geneCount_;
     int popSize_;
 
-    int currentScoring_;
+    int currentVolume_;
     int currentMember_;
 };
 
@@ -90,12 +91,12 @@ void MiniEvolution::initialise(int geneCount, int popSize)
   intervals_ = new MiniValueInterval[geneCount_];
   for (int i = 0; i < geneCount_; ++i)
   {
-    intervals_[i].a = -1000000000000000.0;
-    intervals_[i].b = 1000000000000000.0;
+    intervals_[i].a = -1.0e100;
+    intervals_[i].b = 1.0e100;
   }
   currentMember_ = popSize_ - 1;
-  currentScoring_ = 10000;
-  requiredScores_ = 5;
+  currentVolume_ = 10000;
+  requiredVolume_ = 5;
   for (int i = 0; i < popSize_; ++i)
   {
     genes_[i].score = 0.0;
@@ -119,21 +120,28 @@ double MiniEvolution::getValue(int val)
 
 void MiniEvolution::addScore(double score)
 {
+  addScore(score, 1);
+}
+
+void MiniEvolution::addScore(double score, int liquid)
+{
   genes_[currentMember_].score += score;
 
-  if (currentScoring_ < requiredScores_ - 1)
+  if (currentVolume_ < requiredVolume_ - 1)
   {
-    ++currentScoring_;
+    currentVolume_ += liquid;
   }
   else if (currentMember_ < popSize_ - 1)
   {
-    currentScoring_ = 0;
+    genes_[currentMember_].score /= currentVolume_ + 1;
+    currentVolume_ = 0;
     ++currentMember_;
   }
   else
   {
+    genes_[currentMember_].score /= currentVolume_ + 1;
     currentMember_ = 0;
-    currentScoring_ = 0;
+    currentVolume_ = 0;
     evolve();
   }
 }
