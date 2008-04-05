@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
     sscanf(argv[1], "%i", &threadsForPool);
   }
   ThreadArgument* argument = new ThreadArgument;
-  argument->plga = new Plga(6, 4, 6, threadsForPool);
+  argument->plga = new Plga(6, 2, 6, threadsForPool);
   argument->stop = false;
   Thread thread;
   thread.run(evolveRobots, argument);

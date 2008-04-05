@@ -67,7 +67,7 @@ void Simulation::runSim(bool printprogress)
   Robot robots[ROBOT_COUNT];
   for (int i = 0; i < ROBOT_COUNT; ++i)
   {
-    robots[i].initialize(environment_);
+    robots[i].initialise(environment_);
   }
   double robotStartPositions[ROBOT_COUNT][2] = { { 0.15, -0.1 },
       { 0.15, -0.25 },

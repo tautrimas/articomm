@@ -14,7 +14,7 @@
 //     along with ARTIcomm.  If not, see <http://www.gnu.org/licenses/>.
 
 #define IN 6   //number of input nodes
-#define HID 4  //number of hidden nodes
+#define HID 10  //number of hidden nodes
 #define OUT 2  //output nodes
 #define WEIGHT_COUNT ((IN+1)*(HID)+(HID+1)*OUT) //number of weights
 #define SENSOR_COUNT 2 //how many sensors
@@ -31,24 +31,26 @@ struct PoolMember
 #include <algorithm>
 #include "benchmarker.cpp"
 #include "minievolution.cpp"
+#include <vector>
 
 class Pool
 {
   private:
-    PoolMember * popul_;
+    std::vector<PoolMember> popul_;
     int poolSize_;
     int generation_;
     bool isPaused_;
     int stable_;
+    int stableGa_;
     Environment* environment_;
     int threadCount_;
   public:
     MiniEvolution* miniEvolution_;
     ~Pool();
-    void initialize(int, Environment*, int);
+    void initialise(int, Environment*, int);
     PoolMember crossover(PoolMember);
-    PoolMember mutate(PoolMember, double&);
-    void mutateAll(double);
+    PoolMember mutate(PoolMember, const double&);
+    void mutateAll(int, double);
     void randomizeAll();
     /*void readgenes(double);
      void outputgenes();*/
@@ -72,58 +74,63 @@ class Pool
     {
       return isPaused_;
     }
+    int getEliteCount()
+    {
+      return (poolSize_ / 3);
+    }
     void step();
     void resetStability()
     {
       stable_ = 0;
       isPaused_ = false;
     }
+    void resize(int newSize);
+    void hillClimbing(const int& iterations);
 };
 
-void Pool::initialize(int size, Environment* environment, int threadCount)
+void Pool::initialise(int size, Environment* environment, int threadCount)
 {
-  popul_ = new PoolMember[size];
+  popul_.reserve(size);
+  PoolMember tempMember;
+  popul_.assign(size, tempMember);
   poolSize_ = size;
   environment_ = environment;
   stable_ = 0;
+  stableGa_ = 0;
   isPaused_ = false;
   generation_ = 0;
   threadCount_ = threadCount;
-  miniEvolution_ = new MiniEvolution(3);
-  miniEvolution_->setValue(0, 0.8);
-  miniEvolution_->setInterval(0, 0.0, 1.0);
-  miniEvolution_->setValue(1, 0.08);
-  miniEvolution_->setInterval(1, 0.0, 1.0);
-  miniEvolution_->setValue(2, 1.0);
-  miniEvolution_->setInterval(2, 0.0, 5.0);
-  int RequiredScores = 1024 / poolSize_;
-  if (RequiredScores < 1)
-    RequiredScores = 1;
-  miniEvolution_->setRequiredScores(RequiredScores);
+  miniEvolution_ = new MiniEvolution(1);
+  miniEvolution_->setValue(0, size);
+  miniEvolution_->setInterval(0, 3.0, 1.0e99);
+  /*miniEvolution_->setValue(1, 0.08);
+   miniEvolution_->setInterval(1, 0.0, 1.0);
+   miniEvolution_->setValue(2, 1.0);
+   miniEvolution_->setInterval(2, 0.0, 5.0);*/
+  miniEvolution_->setRequiredVolume(20);
 }
 
 Pool::~Pool()
 {
-  delete [] popul_;
   delete miniEvolution_;
 }
 
 PoolMember Pool::crossover(PoolMember member)
 {
-  if (R.randDouble() < miniEvolution_->getValue(0))
+  if (R.randDouble() < 0.9)
   {
     int crosspoint1 = rand() % (GENE_COUNT);
     int crosspoint2 = crosspoint1 + (rand() % (GENE_COUNT - crosspoint1));
-    int member2 = rand() % (poolSize_ / 3);
+    int member2 = rand() % getEliteCount();
     for (int i = crosspoint1; i < crosspoint2; i++)
       member.gene[i] = popul_[member2].gene[i];
   }
   return member;
 }
 
-PoolMember Pool::mutate(PoolMember member, double& delta)
+PoolMember Pool::mutate(PoolMember member, const double& delta)
 {
-  double ratio = miniEvolution_->getValue(1); //R.randdouble(0.15,1.0);
+  double ratio = 0.05/*miniEvolution_->getValue(1)*/; //R.randdouble(0.15,1.0);
   for (int i = 0; i < GENE_COUNT; i++)
   {
     if (R.randDouble() < ratio)
@@ -135,18 +142,12 @@ PoolMember Pool::mutate(PoolMember member, double& delta)
   return member;
 }
 
-void Pool::mutateAll(double delta)
+void Pool::mutateAll(int elite, double delta)
 {
-  for (int i = (poolSize_ / 3); i < poolSize_ / 3 * 2; i++)
+  for (int i = elite; i < poolSize_; ++i)
   {
-    popul_[i] = crossover(popul_[i - (poolSize_ / 3)]);
-    popul_[i] = mutate(popul_[i - (poolSize_ / 3)], delta);
-    popul_[i].fitness = -9999.0;
-  }
-  for (int i = ((poolSize_ / 3) * 2); i < poolSize_; i++)
-  {
-    popul_[i] = crossover(popul_[i - (poolSize_ / 3)]);
-    popul_[i] = mutate(popul_[i - ((poolSize_ / 3) * 2)], delta);
+    popul_[i] = crossover(popul_[rand() % elite]);
+    popul_[i] = mutate(popul_[i], delta);
     popul_[i].fitness = -9999.0;
   }
 }
@@ -195,14 +196,14 @@ void Pool::randomizeAll()
  fclose(wout);
  }*/
 
-bool compareMembers(PoolMember a, PoolMember b)
+bool compareMembers(const PoolMember& a, const PoolMember& b)
 {
   return a.fitness > b.fitness;
 }
 
 void Pool::sort()
 {
-  std::sort(popul_, popul_ + poolSize_, compareMembers);
+  std::sort(popul_.begin(), popul_.end(), compareMembers);
 }
 
 void Pool::score(int i, bool shouldPrint)
@@ -212,7 +213,7 @@ void Pool::score(int i, bool shouldPrint)
   popul_[i].fitness = simulation.getScore();
 }
 
-struct Interval
+struct ThreadingInterval
 {
     int a, b;
     Pool* pool;
@@ -220,7 +221,7 @@ struct Interval
 
 void* scorePart(void* arg)
 {
-  Interval* interval = (Interval*)arg;
+  ThreadingInterval* interval = (ThreadingInterval*)arg;
   for (int i = interval->a; i < interval->b; i++)
   {
     interval->pool->score(i, false);
@@ -230,21 +231,21 @@ void* scorePart(void* arg)
 
 void Pool::scoreAll()
 {
-  Interval* intervals = new Interval[threadCount_];
+  ThreadingInterval* intervals = new ThreadingInterval[threadCount_];
   Thread* threads = new Thread[threadCount_];
 
-  int a = poolSize_ / 3;
-  int b = a + ((poolSize_ / 3) * 2) / threadCount_;
+  int a = getEliteCount();
+  int b = a + (poolSize_ - getEliteCount()) / threadCount_;
   for (int i = 0; i < threadCount_; ++i)
   {
     intervals[i].a = a;
-    if (i < ((poolSize_ / 3) * 2) % threadCount_)
+    if (i < (poolSize_ - getEliteCount()) % threadCount_)
       ++b;
     intervals[i].b = b;
     intervals[i].pool = this;
     threads[i].run(scorePart, &intervals[i]);
     a = b;
-    b += ((poolSize_ / 3) * 2) / threadCount_;
+    b += (poolSize_ - getEliteCount()) / threadCount_;
   }
   for (int i = 0; i < threadCount_; ++i)
   {
@@ -261,15 +262,59 @@ void Pool::step()
    generation_++;*/
   //copy old best
   double senas = getBest();
-  //replicate first half while mutating them and then evaluate
-  mutateAll(miniEvolution_->getValue(2));
+  resize((int)miniEvolution_->getValue(0));
+  miniEvolution_->setRequiredVolume(-0.00635 * poolSize_ + 20.038);
+  mutateAll(getEliteCount(), 2.0/*miniEvolution_->getValue(2)*/);
   scoreAll();
   sort();
-  if (senas == getBest())
-    ++stable_;
-  else
-    stable_ = 0;
-  if (stable_ * poolSize_ > 20000)
-    isPaused_ = true;
   miniEvolution_->addScore(senas / getBest());
+  if (senas == getBest())
+  {
+    ++stable_;
+    ++stableGa_;
+  }
+  else
+  {
+    stable_ = 0;
+  }
+  if (stable_ * (poolSize_ - getEliteCount() > 250))
+  {
+    hillClimbing(250);
+    stable_ = 0;
+  }
+  if (stableGa_ * (poolSize_ - getEliteCount() > 4000))
+    isPaused_ = true;
+  /*if (getBest() > -85.0)
+   {
+   hillClimbing(1000);
+   }*/
+}
+
+void Pool::resize(int newSize)
+{
+  if (newSize < poolSize_)
+  {
+    popul_.resize(newSize, popul_[1]);
+    poolSize_ = newSize;
+  }
+  else
+  {
+    int oldElite = getEliteCount();
+    popul_.resize(newSize, popul_[1]);
+    poolSize_ = newSize;
+    mutateAll(oldElite, 0.05);
+  }
+}
+
+void Pool::hillClimbing(const int& iterations)
+{
+  for (int i = 0; i < iterations; ++i)
+  {
+    PoolMember oldMember = popul_[0];
+    popul_[0] = mutate(popul_[0], 2.0);
+    score(0, false);
+    if (getBest() < oldMember.fitness)
+      popul_[0] = oldMember;
+  }
+  printf("%f\n", getBest());
 }
