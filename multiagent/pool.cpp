@@ -14,7 +14,7 @@
 //     along with ARTIcomm.  If not, see <http://www.gnu.org/licenses/>.
 
 #define IN 6   //number of input nodes
-#define HID 10  //number of hidden nodes
+#define HID 4  //number of hidden nodes
 #define OUT 2  //output nodes
 #define WEIGHT_COUNT ((IN+1)*(HID)+(HID+1)*OUT) //number of weights
 #define SENSOR_COUNT 2 //how many sensors
@@ -38,7 +38,7 @@ class Pool
   private:
     std::vector<PoolMember> popul_;
     int poolSize_;
-    int generation_;
+    int evaluations_;
     bool isPaused_;
     int stable_;
     int stableGa_;
@@ -76,7 +76,7 @@ class Pool
     }
     int getEliteCount()
     {
-      return (poolSize_ / 3);
+      return (poolSize_ / 6) * 5;
     }
     void step();
     void resetStability()
@@ -85,7 +85,15 @@ class Pool
       isPaused_ = false;
     }
     void resize(int newSize);
-    void hillClimbing(const int& iterations);
+    int hillClimbing(const int& iterations);
+    int getEvaluations()
+    {
+      return evaluations_;
+    }
+    void resetEvaluations()
+    {
+      evaluations_ = 0;
+    }
 };
 
 void Pool::initialise(int size, Environment* environment, int threadCount)
@@ -98,11 +106,11 @@ void Pool::initialise(int size, Environment* environment, int threadCount)
   stable_ = 0;
   stableGa_ = 0;
   isPaused_ = false;
-  generation_ = 0;
+  evaluations_ = 0;
   threadCount_ = threadCount;
   miniEvolution_ = new MiniEvolution(1);
   miniEvolution_->setValue(0, size);
-  miniEvolution_->setInterval(0, 3.0, 1.0e99);
+  miniEvolution_->setInterval(0, 6.0, 1.0e99);
   /*miniEvolution_->setValue(1, 0.08);
    miniEvolution_->setInterval(1, 0.0, 1.0);
    miniEvolution_->setValue(2, 1.0);
@@ -165,8 +173,8 @@ void Pool::randomizeAll()
         popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * j + k] = R.randDouble(-2.0, 2.0);
         //1 * exp(-x * x);
       }
-      /*for (int j=wkiekis;j<wkiekis+sensorcount;j++)
-       popul[i].gene[j]=(j-wkiekis)*110.0-55.0;//R.randdouble(-180,180);*/
+      //popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 4] = 135.0;
+      //popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 3] = -135.0;
       popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 2] = -55.0;
       popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 1] = 55.0;
     }
@@ -257,37 +265,44 @@ void Pool::scoreAll()
 
 void Pool::step()
 {
-  ++generation_;
   /*if (generation_ * getPoolSize() > 25000)
    generation_++;*/
   //copy old best
   double senas = getBest();
   resize((int)miniEvolution_->getValue(0));
-  miniEvolution_->setRequiredVolume(-0.00635 * poolSize_ + 20.038);
+  int required = (int)(3000.0 / (poolSize_ + 100));
+  if (required < 1)
+    required = 1;
+  miniEvolution_->setRequiredVolume(required/*-0.00635 * poolSize_ + 20.038*/);
   mutateAll(getEliteCount(), 2.0/*miniEvolution_->getValue(2)*/);
   scoreAll();
+  evaluations_ += poolSize_ - getEliteCount();
   sort();
   miniEvolution_->addScore(senas / getBest());
   if (senas == getBest())
   {
-    ++stable_;
-    ++stableGa_;
+    stable_ += poolSize_ - getEliteCount();
   }
   else
   {
     stable_ = 0;
+    stableGa_ = 0;
   }
-  if (stable_ * (poolSize_ - getEliteCount() > 250))
+  if (stable_ > 250)
   {
-    hillClimbing(250);
+    evaluations_ += hillClimbing(250);
     stable_ = 0;
   }
-  if (stableGa_ * (poolSize_ - getEliteCount() > 4000))
+  if (senas == getBest())
+  {
+    stableGa_ += poolSize_ - getEliteCount();
+  }
+  if (stableGa_ > 4000)
     isPaused_ = true;
-  /*if (getBest() > -85.0)
-   {
-   hillClimbing(1000);
-   }*/
+  /*if (getBest() > -150.0)
+  {
+    hillClimbing(1000);
+  }*/
 }
 
 void Pool::resize(int newSize)
@@ -306,15 +321,20 @@ void Pool::resize(int newSize)
   }
 }
 
-void Pool::hillClimbing(const int& iterations)
+int Pool::hillClimbing(const int& iterations)
 {
-  for (int i = 0; i < iterations; ++i)
+  bool shouldStop = false;
+  int count = 0;
+  for (; count < iterations && !shouldStop; ++count)
   {
     PoolMember oldMember = popul_[0];
     popul_[0] = mutate(popul_[0], 2.0);
     score(0, false);
     if (getBest() < oldMember.fitness)
       popul_[0] = oldMember;
+    else
+      shouldStop = true;
   }
   printf("%f\n", getBest());
+  return count;
 }

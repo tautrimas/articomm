@@ -71,7 +71,7 @@ class MiniEvolution
 
 MiniEvolution::MiniEvolution(int geneCount)
 {
-  initialise(geneCount, 6);
+  initialise(geneCount, 3);
 }
 
 MiniEvolution::MiniEvolution(int geneCount, int popSize)
@@ -169,7 +169,7 @@ void MiniEvolution::evolve()
   std::sort(genes_, genes_ + popSize_);
   for (int i = 2; i < popSize_; ++i)
   {
-    mutateGenes(i % 2, i);
+    mutateGenes(i % 1, i);
     genes_[i].score *= 1.0e-20;
   }
   for (int i = 0; i < popSize_; ++i)
