@@ -22,11 +22,11 @@ struct Population
     int interval;
 };
 
-class Plga
+class PurpleGa
 {
   public:
-    Plga(int, int, int, int);
-    ~Plga();
+    PurpleGa(int, int, int, int);
+    ~PurpleGa();
     void step();
     void finish();
     int getEvaluations()
@@ -48,7 +48,7 @@ class Plga
     Benchmarker timer_, bigTimer_;
 };
 
-Plga::Plga(int popSize, int base, int barrier, int threadCount)
+PurpleGa::PurpleGa(int popSize, int base, int barrier, int threadCount)
 {
   printf("\nSimulations                 Speed        Size   Fitness    Size   Fitness  ....\n\n");
   evaluations_ = 0;
@@ -65,12 +65,12 @@ Plga::Plga(int popSize, int base, int barrier, int threadCount)
   bigTimer_.start();
 }
 
-Plga::~Plga()
+PurpleGa::~PurpleGa()
 {
   environment_.killWalls();
 }
 
-void Plga::createPopulation()
+void PurpleGa::createPopulation()
 {
   Population* temp;
   temp = new Population;
@@ -86,7 +86,7 @@ void Plga::createPopulation()
     newBarrier_ += 20000;
 }
 
-void Plga::step()
+void PurpleGa::step()
 {
   ++generation_;
   if (evaluations_ > newBarrier_)
@@ -100,7 +100,8 @@ void Plga::step()
         && !iterator->pool->getIsPaused())
     {
       iterator->pool->step();
-      evaluations_ += iterator->pool->getPoolSize() - iterator->pool->getEliteCount();
+      evaluations_ += iterator->pool->getEvaluations();
+      iterator->pool->resetEvaluations();
       shouldPrint = true;
       iterator->interval = iterator->pool->getPoolSize() - iterator->pool->getEliteCount();
     }
@@ -187,7 +188,7 @@ void Plga::step()
   }
 }
 
-void Plga::finish()
+void PurpleGa::finish()
 {
   bigTimer_.end();
   printf("\n==================================\nSummary:\n\n");
