@@ -13,25 +13,11 @@
 //     You should have received a copy of the GNU General Public License
 //     along with ARTIcomm.  If not, see <http://www.gnu.org/licenses/>.
 
-#define IN 6   //number of input nodes
-#define HID 4  //number of hidden nodes
-#define OUT 2  //output nodes
-#define WEIGHT_COUNT ((IN+1)*(HID)+(HID+1)*OUT) //number of weights
-#define SENSOR_COUNT 2 //how many sensors
-#define ROBOT_COUNT 5
-#define GENE_COUNT ((SENSOR_COUNT + WEIGHT_COUNT) * ROBOT_COUNT)
-
-struct PoolMember
-{
-    double gene[GENE_COUNT];
-    double fitness;
-};
-
-#include "simulation.cpp"
 #include <algorithm>
 #include "benchmarker.cpp"
 #include "minievolution.cpp"
 #include <vector>
+#include "simulation.cpp"
 
 class Pool
 {
@@ -52,8 +38,8 @@ class Pool
     PoolMember mutate(PoolMember, const double&);
     void mutateAll(int, double);
     void randomizeAll();
-    /*void readgenes(double);
-     void outputgenes();*/
+    //void readgenes(double);
+    void outputGenes();
     void sort();
     void score(int, bool);
     //void* scorePart(void*);
@@ -76,7 +62,7 @@ class Pool
     }
     int getEliteCount()
     {
-      return (poolSize_ / 6) * 5;
+      return (poolSize_ / 6) * 3;
     }
     void step();
     void resetStability()
@@ -108,9 +94,11 @@ void Pool::initialise(int size, Environment* environment, int threadCount)
   isPaused_ = false;
   evaluations_ = 0;
   threadCount_ = threadCount;
-  miniEvolution_ = new MiniEvolution(1);
+  miniEvolution_ = new MiniEvolution(2);
   miniEvolution_->setValue(0, size);
   miniEvolution_->setInterval(0, 6.0, 1.0e99);
+  miniEvolution_->setValue(1, 5.0);
+  miniEvolution_->setInterval(1, 0.5, 50.0);
   /*miniEvolution_->setValue(1, 0.08);
    miniEvolution_->setInterval(1, 0.0, 1.0);
    miniEvolution_->setValue(2, 1.0);
@@ -138,12 +126,24 @@ PoolMember Pool::crossover(PoolMember member)
 
 PoolMember Pool::mutate(PoolMember member, const double& delta)
 {
-  double ratio = 0.05/*miniEvolution_->getValue(1)*/; //R.randdouble(0.15,1.0);
+  double ratio = miniEvolution_->getValue(1) / GENE_COUNT;
+  int mutationCount = 0;
   for (int i = 0; i < GENE_COUNT; i++)
   {
     if (R.randDouble() < ratio)
-      member.gene[i] += R.randDouble(-member.gene[i] * delta, member.gene[i]
-          * delta);
+    {
+      ++mutationCount;
+      //member.gene[i] += R.randDouble(-member.gene[i] * delta, member.gene[i]
+      //    * delta);
+      double x = R.randDouble(-2.0, 2.0);
+      member.gene[i] += x * fabs(x);
+    }
+  }
+  if (mutationCount == 0)
+  {
+    int i = rand() % GENE_COUNT;
+    double x = R.randDouble(-2.0, 2.0);
+    member.gene[i] += x * fabs(x);
   }
   /*for (int i=wcount;i<genecount;i++)
    member.gene[i] += R.randdouble(-1.0,1.0);*/
@@ -164,19 +164,23 @@ void Pool::randomizeAll()
 {
   for (int i = 0; i < poolSize_; i++)
   {
-    for (int j = 0; j < ROBOT_COUNT; ++j)
+    /*for (int j = 0; j < ROBOT_COUNT; ++j)
+     {
+     for (int k = 0; k < WEIGHT_COUNT; k++)
+     {
+     //we use gaussian funcion to make more values closer to zero and some closer to 1.
+     double x = R.randDouble(-2.0, 2.0);
+     popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * j + k] = x;
+     }
+     //popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 4] = 135.0;
+     //popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 3] = -135.0;
+     popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 2] = rand() % 180 - 90;//-55.0;
+     popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 1] = rand() % 180 - 90;//55.0;
+     }*/
+    for (int j = 0; j < GENE_COUNT; ++j)
     {
-      for (int k = 0; k < WEIGHT_COUNT; k++)
-      {
-        //we use gaussian funcion to make more values closer to zero and some closer to 1.
-        //double x = R.randDouble(-2, 2);
-        popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * j + k] = R.randDouble(-2.0, 2.0);
-        //1 * exp(-x * x);
-      }
-      //popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 4] = 135.0;
-      //popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 3] = -135.0;
-      popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 2] = -55.0;
-      popul_[i].gene[(WEIGHT_COUNT + SENSOR_COUNT) * (j + 1) - 1] = 55.0;
+      double x = R.randDouble(-2.0, 2.0);
+      popul_[i].gene[j] = x;
     }
     popul_[i].fitness = -9999.0;
   }
@@ -193,16 +197,18 @@ void Pool::randomizeAll()
  mutatepool(delta);
  }*/
 
-/*void CPool::outputgenes()
- {
- FILE *wout;
- wout = fopen("weights.txt","w");
- for (int i=0;i<poolsize/3;i++) {
- for (int j=0;j<genecount;j++) fprintf (wout,"%0.15f\n",popul[i].gene[j]);
- fprintf (wout,"\n");
- }
- fclose(wout);
- }*/
+void Pool::outputGenes()
+{
+  FILE *wout;
+  wout = fopen("weights.txt", "w");
+  //for (int i=0; i<poolsize/3; i++)
+  {
+    for (int j = 0; j < GENE_COUNT; j++)
+      fprintf(wout, "%0.15f\n", popul_[0].gene[j]);
+    fprintf(wout, "\n");
+  }
+  fclose(wout);
+}
 
 bool compareMembers(const PoolMember& a, const PoolMember& b)
 {
@@ -216,7 +222,7 @@ void Pool::sort()
 
 void Pool::score(int i, bool shouldPrint)
 {
-  Simulation simulation(popul_[i], environment_);
+  Simulation simulation(&popul_[i], environment_);
   simulation.runSim(shouldPrint);
   popul_[i].fitness = simulation.getScore();
 }
@@ -300,9 +306,9 @@ void Pool::step()
   if (stableGa_ > 4000)
     isPaused_ = true;
   /*if (getBest() > -150.0)
-  {
-    hillClimbing(1000);
-  }*/
+   {
+   hillClimbing(1000);
+   }*/
 }
 
 void Pool::resize(int newSize)

@@ -23,7 +23,8 @@
 #define ROBOTS_RADIUSSQ 0.0025 //robots radius in metres 0.05
 #define MAX_DISTANCE_SEEN 2.0
 #define MAX_DISTANCE_SEENSQ 4.0  //how many ship sized distance units can sensor see in front 2.0
-#define START_ROTATION 180.0
+#define START_ROTATION 0.0
+#define UPDATE_INTERVAL 0.04 //every this amount of seconds, posion and speed vectors will be recalculated
 
 #define RAD_IN_DEG (3.14159265/180.0)
 
@@ -38,7 +39,7 @@ class Robot
     void newPosition(double, double); //calculates new osition. needs acceleration (0 to 1) and rotaion speed (0 to 1)
     double sensorDistToWall(double); //returns sensor value (0 to 1). 1 is equals maxsensdist or more
     double distToWallSq(); //returns distance in metres to nearest wall
-    double distToPointSq(double &x, double &y);
+    double distToPointSq(const double &x, const double &y);
     double angleToPoint(double &x, double &y, double dhead); //returns angle to a point when dhead is angle from heading
 
     double speed_;
@@ -97,7 +98,7 @@ INL double Robot::sensorDistToWall(double dhead)
   v1[1] = fastSin(newhead * RAD_IN_DEG) * ROBOTS_RADIUS;
   //prepearing to calculate shortest distance to wall
   double minDistance = 1.0, distance;
-  for (int i = 0; i < environment_->wallCount(); i++)
+  for (int i = 0; i < environment_->getWallCount(); i++)
   {
     //wall's b1, b2 and v2, where v2 is walls length
     b1[0] = environment_->getCorner(i, 0);
@@ -161,7 +162,7 @@ INL double Robot::distToWallSq()
   //simmilar to CRobot::sensordisttowall. gdistance is made to be as large as possible, so that first
   //  calculation would overwrite it
   double minDistanceSq = 5000000.0, distanceSq;
-  for (int i = 0; i < environment_->wallCount(); i++)
+  for (int i = 0; i < environment_->getWallCount(); i++)
   {
     p1=position_[0];
     p2=position_[1];
@@ -191,7 +192,7 @@ INL double Robot::distToWallSq()
   return minDistanceSq - ROBOTS_RADIUSSQ;
 }
 
-INL double Robot::distToPointSq(double &x, double &y)
+INL double Robot::distToPointSq(const double &x, const double &y)
 {
   double dx = position_[0] - x;
   double dy = position_[1] - y;

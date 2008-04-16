@@ -33,8 +33,8 @@ using namespace std;
 #define rotx 50
 #define roty -30
 #define rotz 0
-#define transx -0.4
-#define transy 0.3
+#define transx -0.8
+#define transy -0.3
 #define transz -2.1
 #define t (0.028) // /x is for slowing and fastening things up
 /* The number of our GLUT window */
@@ -62,12 +62,15 @@ GLfloat LightPosition[] = { 0.0f, 0.0f, 2.0f, 1.0f };
 
 #define N 128
 double rob[N][3][3];
-#define S 4
+#define S 100
 double sienos[S][4];
 
-bool pirmaskartas = 1;
+bool pirmaskartas = true;
 
 ifstream gin("coords.txt");
+
+int robotCount, fireCount;
+double fires[10][2];
 double x, y, rot;
 
 void pakraunam()
@@ -88,7 +91,8 @@ void pakraunam()
 
   fin.open("walls.txt");
   int walls;
-  fin >> walls;
+  double garbage;
+  fin >> garbage >> garbage >> garbage >> garbage >> walls;
   for (i = 0; i < walls; ++i)
   {
     fin >> sienos[i][0];
@@ -97,6 +101,14 @@ void pakraunam()
     fin >> sienos[i][3];
   }
   fin.close();
+  double a, b;
+  gin >> a >> b;
+  robotCount = a;
+  fireCount = b;
+  for (int i = 0; i < fireCount; ++i)
+  {
+    gin >> fires[i][0] >> fires[i][1];
+  }
 }
 
 void BuildFont()
@@ -385,7 +397,7 @@ void DrawGLScene()
   glColor3f(0.9, 0.9, 0.9);
   double mat[4][4];
   double vertex[3];
-  double floor[4*2]= { -0.2, 0.2, 1.1, 0.2, 1.1, -0.8, -0.2, -0.8 };
+  double floor[4*2]= { -0.2, 1.1, 1.6, 1.1, 1.6, -0.2, -0.2, -0.2 };
   for (int i=0; i<4; i++)
   {
     if (i==2)
@@ -405,11 +417,9 @@ void DrawGLScene()
   }
   glEnd();
   /**********************************
-
    Robotuko piešimas
-
    **********************************/
-  for (int nr = 0; nr < 5; ++nr)
+  for (int nr = 0; nr < robotCount; ++nr)
   {
     glLoadIdentity();
     gin >> x >> y >> rot;
@@ -441,6 +451,29 @@ void DrawGLScene()
       glEnd();
     }
     // tekstas();
+  }
+  for (int i = 0; i < fireCount; ++i)
+  {
+    gin >> rot;
+    glLoadIdentity();
+    glBegin(GL_TRIANGLES);
+    glColor3f(1.0, 0.282, 0.0);
+    for (int j = 0; j < 3; ++j)
+    {
+      mvien(mat);
+      mroty(mat, j * 120 + rtri*10);
+      mtrans(mat, fires[i][0], 0.01, -fires[i][1]);
+      mrotx(mat, rotx);
+      mroty(mat, roty);
+      mrotz(mat, rotz);
+      mtrans(mat, transx, transy, transz);
+      vertex[0] = 0.0;
+      vertex[1] = 0.0;
+      vertex[2] = -rot;
+      vsum(mat, vertex[0], vertex[1], vertex[2]);
+      glVertex3f(vertex[0], vertex[1], vertex[2]);
+    }
+    glEnd();
   }
 
   // swap the buffers to display, since double buffering is used.

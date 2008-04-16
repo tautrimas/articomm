@@ -17,13 +17,14 @@
 #include "ann.cpp"
 
 #define IN 6   //number of input nodes
-#define HID 2  //number of hidden nodes
-#define OUT 0  //output nodes
+#define HID 4  //number of hidden nodes
+#define OUT 2  //output nodes
 #define WEIGHT_COUNT ((IN+1)*(HID)+(HID+1)*OUT) //number of weights
-#define SENSOR_COUNT 3 //how many sensors
-#define ROBOT_COUNT 3
+#define SENSOR_COUNT 2 //how many sensors
+#define ROBOT_COUNT 5
 #define GENE_COUNT ((SENSOR_COUNT + WEIGHT_COUNT) * ROBOT_COUNT)
-#define ROUND_LENGTH 24.0 //round length in seconds
+#define ROUND_LENGTH 12.0 //round length in seconds
+
 struct PoolMember
 {
     double gene[GENE_COUNT];
@@ -71,22 +72,26 @@ void Simulation::outputSimulationStep(double* data, int dataSize)
   fclose(wout);
 }
 
-void Simulation::runSim(bool printProgress)
+void Simulation::runSim(bool printprogress)
 {
-  if (printProgress)
-  {
+  if (printprogress)
     prepareSimulationFile();
-    double data[] = { ROBOT_COUNT + 0.1, FIRE_COUNT + 0.1 };
-    outputSimulationStep(data, sizeof(data) / sizeof(double));
-  }
   //robot initialization
   Robot robots[ROBOT_COUNT];
   for (int i = 0; i < ROBOT_COUNT; ++i)
   {
     robots[i].initialise(environment_);
   }
-  double robotStartPositions[ROBOT_COUNT][2] = { { 0.3, 0.6 }, { 0.2, 0.5 }, {
-      0.1, 0.6 } };
+  double robotStartPositions[ROBOT_COUNT][2] = { { 0.15, -0.1 },
+      { 0.15, -0.25 },
+      { 0.15, -0.40 },
+      { 0.30, -0.15 },
+      { 0.30, -0.30 } };
+  double robotEndPositions[ROBOT_COUNT][2] = { { 0.60, -0.30 },
+      { 0.60, -0.15 },
+      { 0.75, -0.40 },
+      { 0.75, -0.25 },
+      { 0.75, -0.10 } };
   for (int i = 0; i < ROBOT_COUNT; ++i)
   {
     robots[i].position_[0] = robotStartPositions[i][0];
@@ -111,18 +116,7 @@ void Simulation::runSim(bool printProgress)
    {
    didReachDestination[i] = false;
    }*/
-  double extinguished[FIRE_COUNT] = { 0 };
-
-  if (printProgress)
-  {
-    for (int i = 0; i < FIRE_COUNT; ++i)
-    {
-      double data[] = { environment_->getFire(i, 0),
-          environment_->getFire(i, 1) };
-      outputSimulationStep(data, sizeof(data) / sizeof(double));
-    }
-  }
-  while (step * UPDATE_INTERVAL < ROUND_LENGTH && !stop)
+  do
   {
     ++step;
 
@@ -147,8 +141,6 @@ void Simulation::runSim(bool printProgress)
         robots[nr].position_[1] = oldPosition[nr][1];
         robots[nr].speed_ = 0.0;
         didMove[nr] = true;
-        // stop = true;
-        simulationFitness += -1.0;
       }
 
       // checking for robot collision
@@ -217,9 +209,9 @@ void Simulation::runSim(bool printProgress)
       anns[nr].clearNodes();
       for (int i = 0; i < SENSOR_COUNT; i++)
       {
-        //int index = (WEIGHT_COUNT + SENSOR_COUNT) * (nr + 1) - SENSOR_COUNT;
+        int index = (WEIGHT_COUNT + SENSOR_COUNT) * (nr + 1) - SENSOR_COUNT;
         //their states are transmited to ANN inputs
-        anns[nr].setNode(i + 1, robots[nr].sensorDistToWall(60.0 * i - 60.0)/*member_->gene[index + i]) * 90.0*/);
+        anns[nr].setNode(i + 1, robots[nr].sensorDistToWall(member_->gene[index + i]) * 90.0);
       }
 
       if (fabs(angleToRobot) > 90.0 || shortestDistanceSq > MAX_DISTANCE_SEENSQ
@@ -232,41 +224,17 @@ void Simulation::runSim(bool printProgress)
       {
         anns[nr].setNode(SENSOR_COUNT + 1, angleToRobot);
         anns[nr].setNode(SENSOR_COUNT + 2, shortestDistanceSq / ROBOTS_RADIUSSQ
-        - 1); // incorrect!!
+            - 1); // incorrect!!
       }
 
-      /*anns[nr].setNode(SENSOR_COUNT + 1, 0.0); // null angle
-       anns[nr].setNode(SENSOR_COUNT + 2, 1.0); // max distance 1.0*/
-
-      double heatMeter = 0.0;
-      for (int i = 0; i < FIRE_COUNT; ++i)
-      {
-        if (extinguished[i] < 5.0)
-        {
-          double xSq = robots[nr].distToPointSq(environment_->getFire(i, 0),
-              environment_->getFire(i, 1));
-          heatMeter += exp(-9.20997 * xSq);
-          if (xSq < 0.0225)
-          {
-            extinguished[i] += UPDATE_INTERVAL;
-          }
-        }
-        else
-        {
-          simulationFitness += 1.1 * UPDATE_INTERVAL;
-        }
-      }
-
-      anns[nr].setNode(SENSOR_COUNT + 3, heatMeter);
-      /*
-       anns[nr].setNode(SENSOR_COUNT + 3, robots[nr].angleToPoint(
-       robotEndPositions[nr][0], robotEndPositions[nr][1], 0));
-       
-       double distanceToDestinationSq = robots[nr].distToPointSq(
-       robotEndPositions[nr][0], robotEndPositions[nr][1]);
-       anns[nr].setNode(SENSOR_COUNT + 4, distanceToDestinationSq);*/
+      anns[nr].setNode(SENSOR_COUNT + 3, robots[nr].angleToPoint(
+          robotEndPositions[nr][0], robotEndPositions[nr][1], 0));
+      double distanceToDestinationSq = robots[nr].distToPointSq(
+          robotEndPositions[nr][0], robotEndPositions[nr][1]);
+      anns[nr].setNode(SENSOR_COUNT + 4, distanceToDestinationSq);
 
       anns[nr].process();
+      //      printf("%f %f\n", ann.getOutputNode(0), (ann.getOutputNode(1) - 0.5) * 2);
 
       // New position is counted. ANN's outputs are acceleration and rotation
       // speed. Values from ANN are from 0 to 1 so they must be converted to 
@@ -276,13 +244,13 @@ void Simulation::runSim(bool printProgress)
       /*ann.getNode(ann.getNodeCount()-2),
        (ann.getNode(ann.getNodeCount()-1)-0.5)*2.0);*/
 
-      if (printProgress)
+      if (printprogress)
       {
         double data[] = { robots[nr].position_[0], robots[nr].position_[1],
             robots[nr].head_ };
         outputSimulationStep(data, sizeof(data) / sizeof(double));
       }
-      simulationFitness += heatMeter * UPDATE_INTERVAL;
+      simulationFitness -= sqrt(distanceToDestinationSq);
       /*if (distanceToDestination < ROBOTS_RADIUS)
        didReachDestination[nr] = true;
        bool allReachedDestinations = true;
@@ -294,14 +262,6 @@ void Simulation::runSim(bool printProgress)
        if (allReachedDestinations == true)
        stop = true;*/
     }
-    if (printProgress)
-    {
-      for (int i = 0; i < FIRE_COUNT; ++i)
-      {
-        double data[] = { 0.1 - extinguished[i] * 0.02 };
-        outputSimulationStep(data, sizeof(data) / sizeof(double));
-      }
-    }
-  }
+  } while (step * UPDATE_INTERVAL < ROUND_LENGTH && !stop);
   member_->fitness = simulationFitness;
 }

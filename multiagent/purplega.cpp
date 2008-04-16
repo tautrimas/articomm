@@ -56,7 +56,7 @@ PurpleGa::PurpleGa(int popSize, int base, int barrier, int threadCount)
   newPopSize_ = popSize;
   generation_ = 0;
   base_ = base;
-  environment_.initializeWalls();
+  environment_.initialise("walls.txt");
   threadCount_ = threadCount;
 
   createPopulation();
@@ -67,7 +67,7 @@ PurpleGa::PurpleGa(int popSize, int base, int barrier, int threadCount)
 
 PurpleGa::~PurpleGa()
 {
-  environment_.killWalls();
+  environment_.kill();
 }
 
 void PurpleGa::createPopulation()
@@ -206,4 +206,5 @@ void PurpleGa::finish()
   printf("%f\n", populations_.front().pool->getBest());
   populations_.front().pool->score(0, true);
   printf("%f\n", populations_.front().pool->getBest());
+  populations_.front().pool->outputGenes();
 }
