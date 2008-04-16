@@ -148,19 +148,17 @@ void MiniEvolution::addScore(double score, int liquid)
 
 void MiniEvolution::mutateGenes(int parent, int child)
 {
-  for (int i = 0; i < geneCount_; ++i)
-  {
-    double x = R.randDouble(-1.4422, 0.9086);
-    genes_[child].genes[i] = genes_[parent].genes[i] * ((-x * x * x) + 1.0);
+  int i = rand() % geneCount_;
+  double x = R.randDouble(-1.4422, 0.9086);
+  genes_[child].genes[i] = genes_[parent].genes[i] * ((-x * x * x) + 1.0);
 
-    if (genes_[child].genes[i] > intervals_[i].b)
-    {
-      genes_[child].genes[i] = intervals_[i].b;
-    }
-    else if (genes_[child].genes[i] < intervals_[i].a)
-    {
-      genes_[child].genes[i] = intervals_[i].a;
-    }
+  if (genes_[child].genes[i] > intervals_[i].b)
+  {
+    genes_[child].genes[i] = intervals_[i].b;
+  }
+  else if (genes_[child].genes[i] < intervals_[i].a)
+  {
+    genes_[child].genes[i] = intervals_[i].a;
   }
 }
 

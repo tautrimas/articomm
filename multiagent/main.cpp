@@ -30,7 +30,7 @@ Randomization R;
 
 struct ThreadArgument
 {
-    PurpleGa* plga;
+    PurpleGa* purpleGa;
     bool stop;
 };
 
@@ -38,7 +38,7 @@ void* evolveRobots(void* arg)
 {
   ThreadArgument* argument = (ThreadArgument*) arg;
   while (argument->stop != true)
-    argument->plga->step();
+    argument->purpleGa->step();
   pthread_exit(0);
 }
 
@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
     sscanf(argv[1], "%i", &threadsForPool);
   }
   ThreadArgument* argument = new ThreadArgument;
-  argument->plga = new PurpleGa(6, 2, 6, threadsForPool);
+  argument->purpleGa = new PurpleGa(15, 2, 6, threadsForPool);
   argument->stop = false;
   Thread thread;
   thread.run(evolveRobots, argument);
@@ -68,8 +68,8 @@ int main(int argc, char* argv[])
   getc(stdin);
   argument->stop = true;
   thread.join();
-  argument->plga->finish();
-  delete argument->plga;
+  argument->purpleGa->finish();
+  delete argument->purpleGa;
   delete argument;
 
   puts("");

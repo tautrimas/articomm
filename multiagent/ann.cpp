@@ -54,7 +54,8 @@ double Ann::getNode(int node)
   return nodes_[node];
 }
 
-void Ann::initialise(double* weightsStart, double* weightsEnd, int in, int hid, int out)
+void Ann::initialise(double* weightsStart, double* weightsEnd, int in, int hid,
+    int out)
 {
   in_ = in + 1;
   hid_ = hid + 1;
@@ -68,6 +69,7 @@ void Ann::initialise(double* weightsStart, double* weightsEnd, int in, int hid, 
   for (int i = 0; iterator != weightsEnd; ++iterator, ++i)
     weights_[i] = *iterator;
   nodes_ = new double[nodeCount_];
+
 }
 
 Ann::~Ann()
@@ -93,8 +95,11 @@ INL void Ann::process()
 {
   for (int i = 0; i < in_; i++)
     for (int j = in_ + 1; j < in_ + hid_; j++)
-      // weights_ are multiplied by nodes values and added to hidden nodes
-      nodes_[j] += nodes_[i] * weights_[(j - in_ - 1) * in_ + i ];
+      if (i == 0)
+        nodes_[j] += -1.0;
+      else
+        // weights_ are multiplied by nodes values and added to hidden nodes
+        nodes_[j] += nodes_[i] * weights_[(j - in_ - 1) * in_ + i ];
   for (int i = in_ + 1; i < in_ + hid_; i++)
   {
     // that is a approximated (fast) sigmoid function. Resulting network[i] is in [0;1]
@@ -103,8 +108,11 @@ INL void Ann::process()
   }
   for (int i = in_; i < in_ + hid_; i++)
     for (int j = in_ + hid_; j < nodeCount_; j++)
-      // weights_ are multiplied by nodes values and added to output nodes
-      nodes_[j] += nodes_[i] * weights_[(j - in_ - hid_) * hid_ + i + in_ * ( hid_ - 2)];
+      if (i == in_)
+        nodes_[j] += -1.0;
+      else
+        // weights_ are multiplied by nodes values and added to output nodes
+        nodes_[j] += nodes_[i] * weights_[(j - in_ - hid_) * hid_ + i + in_ * ( hid_ - 2)];
   for (int i = in_ + hid_; i < nodeCount_; i++)
   {
     // again sigmoid, but this time output nodes are processed

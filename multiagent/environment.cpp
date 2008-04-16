@@ -13,45 +13,49 @@
 //     You should have received a copy of the GNU General Public License
 //     along with ARTIcomm.  If not, see <http://www.gnu.org/licenses/>.
 
+#define FIRE_COUNT 2
+
 class Environment
 {
   private:
-    double* wall_;
-    int walls_;
+    double* walls_;
+    int wallCount_;
+    double fires_[FIRE_COUNT][2];
   public:
-    Environment()
+    int getWallCount()
     {
+      return wallCount_;
     }
-    ~Environment()
-    {
-    }
-    int wallCount()
-    {
-      return walls_;
-    }
-    void initializeWalls();
-    void killWalls();
+    void initialise(const char*);
+    void kill();
     double getCorner(int wallNumber, int corner)
     {
-      return wall_[wallNumber*4+corner];
+      return walls_[wallNumber*4+corner];
+    }
+    double getFire(int fire, int axis)
+    {
+      return fires_[fire][axis];
     }
 };
 
-void Environment::initializeWalls()
+void Environment::initialise(const char* fileName)
 {
   FILE* fin;
-  fin = fopen("walls.txt", "r");
-  fscanf(fin, "%i", &walls_);
-  wall_ = new double[walls_*4];
-  for (int i=0; i<walls_; i++)
+  fin = fopen(fileName, "r");
+  for (int i = 0; i < FIRE_COUNT; ++i) {
+    fscanf(fin, "%lf %lf", &fires_[i][0], &fires_[i][1]);
+  }
+  fscanf(fin, "%i", &wallCount_);
+  walls_ = new double[wallCount_ * 4];
+  for (int i = 0; i < wallCount_; ++i)
   {
-    fscanf(fin, "%lf %lf %lf %lf", &wall_[i*4+0], &wall_[i*4+1], &wall_[i*4+2],
-        &wall_[i*4+3]);
+    fscanf(fin, "%lf %lf %lf %lf", &walls_[i*4+0], &walls_[i*4+1],
+        &walls_[i*4+2], &walls_[i*4+3]);
   }
   fclose(fin);
 }
 
-void Environment::killWalls()
+void Environment::kill()
 {
-  delete [] wall_;
+  delete [] walls_;
 }
